@@ -1,52 +1,130 @@
- <!DOCTYPE html>
-<html lang="bn">
+<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Panel -Swappr</title>
-   <link rel="icon" type="image/png" href="logo.png?v=1.0">
+  <title>Admin Control Panel - Swappr</title>
+  <link rel="icon" type="image/png" href="logo.png?v=1.0">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Poppins:wght@600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
 
-  <nav class="navbar navbar-expand-lg navbar-dark shadow-sm">
+  <!-- Navigation Bar -->
+  <nav class="navbar navbar-expand-lg navbar-dark sticky-top shadow-sm">
     <div class="container">
-      <a class="navbar-brand text-warning" href="#">
-        <i class="fa-solid fa-user-shield me-2"></i>Swappr<span>Admin</span>
+      <a class="navbar-brand d-flex align-items-center gap-2" href="/">
+        <i class="fa-solid fa-repeat text-info fs-4"></i>
+        <span>Swa<span class="text-info">ppr</span></span>
       </a>
-      <div class="ms-auto">
-        <a href="/dashboard.html" class="btn btn-outline-light btn-sm">User Dashboard</a>
+
+      <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain" aria-controls="navbarMain" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="navbarMain">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-3">
+          <li class="nav-item">
+            <a class="nav-link" href="/" id="nav-home"><i class="fa-solid fa-house me-1"></i> Home</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/skills.html" id="nav-skills"><i class="fa-solid fa-compass me-1"></i> Browse Skills</a>
+          </li>
+          <li class="nav-item auth-only" style="display: none;">
+            <a class="nav-link" href="/dashboard.html" id="nav-dashboard"><i class="fa-solid fa-gauge me-1"></i> Dashboard</a>
+          </li>
+          <li class="nav-item admin-only" style="display: none;">
+            <a class="nav-link active text-warning" href="/admin.html" id="nav-admin"><i class="fa-solid fa-user-shield me-1"></i> Admin</a>
+          </li>
+        </ul>
+
+        <div class="d-flex align-items-center gap-2 mt-3 mt-lg-0" id="navAuthSection">
+          <a href="/login.html" class="btn btn-outline-light btn-sm guest-only"><i class="fa-solid fa-right-to-bracket me-1"></i> Login</a>
+          <a href="/register.html" class="btn btn-primary btn-sm guest-only"><i class="fa-solid fa-user-plus me-1"></i> Register</a>
+
+          <div class="credit-badge auth-only" style="display: none;" title="Your available credits">
+            <i class="fa-solid fa-bolt text-warning"></i> <span id="navCreditBalance">0 Credits</span>
+          </div>
+          <a href="/profile.html" class="btn btn-outline-light btn-sm auth-only" id="navProfileBtn" style="display: none;">
+            <i class="fa-solid fa-user me-1"></i> <span id="navProfileName">My Profile</span>
+          </a>
+          <button class="btn btn-danger btn-sm auth-only" onclick="logout()" style="display: none;">
+            <i class="fa-solid fa-right-from-bracket me-1"></i> Logout
+          </button>
+        </div>
       </div>
     </div>
   </nav>
 
+  <!-- Main Admin Content -->
   <main class="flex-grow-1">
     <div class="container my-5">
-      <h2 class="mb-4"><i class="fa-solid fa-sliders text-primary me-2"></i> System Control Panel</h2>
+      <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+          <h2 class="fw-bold mb-1"><i class="fa-solid fa-sliders text-primary me-2"></i>System Administration</h2>
+          <p class="text-muted mb-0">Monitor user activities, account roles, and maintain system health.</p>
+        </div>
+        <div>
+          <button class="btn btn-outline-primary btn-sm" onclick="loadAdminData()"><i class="fa-solid fa-rotate-right me-1"></i> Refresh Data</button>
+          <a href="/dashboard.html" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-gauge me-1"></i> User View</a>
+        </div>
+      </div>
 
-      <div class="row">
-        <div class="col-md-12">
-          <div class="card p-4">
-            <h5>All Users List</h5>
-            <div class="table-responsive mt-3">
-              <table class="table table-hover align-middle">
-                <thead class="table-dark">
-                  <tr>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Role</th>
-                    <th>Credits</th>
-                  </tr>
-                </thead>
-                <tbody id="usersTable">
-                  <!-- Admin Data loaded here -->
-                </tbody>
-              </table>
-            </div>
+      <!-- Quick Stats -->
+      <div class="row g-3 mb-4">
+        <div class="col-md-4">
+          <div class="card stat-card border-0 p-3 shadow-sm border-start border-primary border-4">
+            <small class="text-muted text-uppercase fw-semibold">Total Accounts</small>
+            <h3 class="fw-bold text-dark mt-1 mb-0" id="statTotalUsers">0</h3>
           </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card stat-card border-0 p-3 shadow-sm border-start border-danger border-4">
+            <small class="text-muted text-uppercase fw-semibold">Administrators</small>
+            <h3 class="fw-bold text-dark mt-1 mb-0" id="statTotalAdmins">0</h3>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card stat-card border-0 p-3 shadow-sm border-start border-warning border-4">
+            <small class="text-muted text-uppercase fw-semibold">Circulating Credits</small>
+            <h3 class="fw-bold text-dark mt-1 mb-0" id="statTotalCredits">0</h3>
+          </div>
+        </div>
+      </div>
+
+      <div id="adminAlertBox"></div>
+
+      <!-- Users Management Card -->
+      <div class="card p-4 shadow-sm border-0">
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+          <h5 class="fw-bold mb-0">Platform Users Directory</h5>
+          <div style="max-width: 280px;" class="w-100">
+            <input type="text" id="userSearchInput" class="form-control form-control-sm" placeholder="Filter by name or email..." oninput="filterUsersTable()">
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-dark">
+              <tr>
+                <th>User</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Credits</th>
+                <th class="text-end">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="usersTable">
+              <tr>
+                <td colspan="5" class="text-center py-4">
+                  <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                  <span class="ms-2 text-muted">Loading user accounts...</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -56,8 +134,6 @@
   <footer class="w-100 bg-dark text-light py-4 border-top border-secondary border-opacity-25">
     <div class="container">
       <div class="row align-items-center g-3">
-        
-        <!-- Brand & Copyright -->
         <div class="col-md-6 text-center text-md-start">
           <a class="navbar-brand text-warning fw-bold fs-5 d-inline-block mb-1" href="/">
             <i class="fa-solid fa-repeat text-info me-2"></i>Swa<span class="text-white">ppr</span>
@@ -66,13 +142,16 @@
             &copy; 2026 Swappr Skill Exchange Platform. All rights reserved.
           </p>
         </div>
-
-        <!-- Quick Navigation & Links -->
         <div class="col-md-6 text-center text-md-end">
           <ul class="list-inline mb-0 small">
             <li class="list-inline-item me-3">
               <a href="/dashboard.html" class="text-secondary text-decoration-none hover-white">
                 <i class="fa-solid fa-gauge me-1"></i> User Dashboard
+              </a>
+            </li>
+            <li class="list-inline-item me-3">
+              <a href="/skills.html" class="text-secondary text-decoration-none hover-white">
+                <i class="fa-solid fa-compass me-1"></i> Browse Skills
               </a>
             </li>
             <li class="list-inline-item me-3">
@@ -87,40 +166,121 @@
             </li>
           </ul>
         </div>
-
       </div>
     </div>
   </footer>
 
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/js/main.js"></script>
   <script>
+    let allUsers = [];
+    const token = localStorage.getItem('token');
+
     async function loadAdminData() {
-      const token = localStorage.getItem('token');
+      if (!token) {
+        window.location.href = '/login.html';
+        return;
+      }
+
       try {
         const res = await fetch('/api/admin/users', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
+
         if (!res.ok) {
-          alert('Admin access denied!');
+          alert('Access denied. Administrator privileges required.');
           window.location.href = '/dashboard.html';
           return;
         }
-        const users = await res.json();
-        const tbody = document.getElementById('usersTable');
-        tbody.innerHTML = users.map(u => `
-          <tr>
-            <td>${u.name}</td>
-            <td>${u.email}</td>
-            <td><span class="badge ${u.role === 'admin' ? 'bg-danger' : 'bg-secondary'}">${u.role}</span></td>
-            <td><strong class="text-warning">${u.credits}</strong></td>
-          </tr>
-        `).join('');
+
+        allUsers = await res.json();
+        updateAdminStats(allUsers);
+        renderUsers(allUsers);
       } catch(err) {
         console.error(err);
+        showAlert('Failed to connect to admin API', 'danger', 'adminAlertBox');
+      }
+    }
+
+    function updateAdminStats(users) {
+      document.getElementById('statTotalUsers').innerText = users.length;
+      document.getElementById('statTotalAdmins').innerText = users.filter(u => u.role === 'admin').length;
+      document.getElementById('statTotalCredits').innerText = users.reduce((acc, u) => acc + (u.credits || 0), 0);
+    }
+
+    function filterUsersTable() {
+      const q = (document.getElementById('userSearchInput').value || '').toLowerCase().trim();
+      const filtered = allUsers.filter(u => 
+        (u.name || '').toLowerCase().includes(q) || 
+        (u.email || '').toLowerCase().includes(q)
+      );
+      renderUsers(filtered);
+    }
+
+    function renderUsers(users) {
+      const tbody = document.getElementById('usersTable');
+      if (!users || users.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-muted">No users found.</td></tr>`;
+        return;
+      }
+
+      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+      const currentUserId = currentUser._id || currentUser.id;
+
+      tbody.innerHTML = users.map(u => {
+        const isSelf = u._id === currentUserId;
+        return `
+          <tr>
+            <td>
+              <div class="d-flex align-items-center">
+                <i class="fa-solid fa-circle-user fa-lg text-secondary me-2"></i>
+                <span class="fw-semibold">${escapeHtml(u.name)}</span>
+              </div>
+            </td>
+            <td>${escapeHtml(u.email)}</td>
+            <td>
+              <span class="badge ${u.role === 'admin' ? 'bg-danger' : 'bg-secondary'}">
+                ${u.role}
+              </span>
+            </td>
+            <td><strong class="text-warning">${u.credits}</strong> Credits</td>
+            <td class="text-end">
+              ${isSelf ? `
+                <span class="badge bg-light text-dark border">Your Account</span>
+              ` : `
+                <button class="btn btn-sm btn-outline-danger" onclick="deleteUser('${u._id}', '${escapeHtml(u.name)}')">
+                  <i class="fa-solid fa-trash me-1"></i> Delete
+                </button>
+              `}
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function deleteUser(userId, userName) {
+      if (!confirm(`Are you sure you want to delete account "${userName}"? This will delete all their skills and bookings.`)) {
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/admin/users/${userId}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (res.ok) {
+          showAlert(`User "${userName}" has been deleted`, 'success', 'adminAlertBox');
+          loadAdminData();
+        } else {
+          showAlert('Failed to delete user account', 'danger', 'adminAlertBox');
+        }
+      } catch (err) {
+        showAlert('Network error deleting user', 'danger', 'adminAlertBox');
       }
     }
 
     loadAdminData();
   </script>
-  
 </body>
 </html>

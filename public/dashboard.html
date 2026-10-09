@@ -1,206 +1,463 @@
- <!DOCTYPE html>
-<html lang="bn">
+<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard -Swappr</title>
-    <link rel="icon" type="image/png" href="logo.png?v=1.0">
+  <title>Dashboard - Swappr</title>
+  <link rel="icon" type="image/png" href="logo.png?v=1.0">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Poppins:wght@600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
 
-  <nav class="navbar navbar-expand-lg navbar-dark shadow-sm">
-  <div class="container">
-    <a class="navbar-brand" href="/">
-      <i class="fa-solid fa-repeat text-info me-2"></i>Swa<span>ppr</span>
-    </a>
-    <div class="ms-auto d-flex align-items-center gap-3">
-      <div class="credit-badge">
-        <i class="fa-solid fa-bolt"></i> <span id="creditBalance">0 Credits</span>
-      </div>
-
-      <!-- My Profile Button Added -->
-      <a href="/profile.html" class="btn btn-sm btn-outline-light">
-        <i class="fa-solid fa-user me-1"></i> My Profile
+  <!-- Navigation Bar -->
+  <nav class="navbar navbar-expand-lg navbar-dark sticky-top shadow-sm">
+    <div class="container">
+      <a class="navbar-brand d-flex align-items-center gap-2" href="/">
+        <i class="fa-solid fa-repeat text-info fs-4"></i>
+        <span>Swa<span class="text-info">ppr</span></span>
       </a>
 
-      <button id="logoutBtn" class="btn btn-sm btn-danger">
-        <i class="fa-solid fa-right-from-bracket me-1"></i> Logout
+      <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain" aria-controls="navbarMain" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
       </button>
-    </div>
-  </div>
-</nav>
 
-  <main class="flex-grow-1">
-  <div class="container my-5">
-    <div class="row mb-4">
-      <div class="col">
-        <h2 id="welcomeMsg">Welcome!</h2>
-        <p class="text-muted">Manage your skill offers and booking requests.</p>
+      <div class="collapse navbar-collapse" id="navbarMain">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-3">
+          <li class="nav-item">
+            <a class="nav-link" href="/" id="nav-home"><i class="fa-solid fa-house me-1"></i> Home</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/skills.html" id="nav-skills"><i class="fa-solid fa-compass me-1"></i> Browse Skills</a>
+          </li>
+          <li class="nav-item auth-only" style="display: none;">
+            <a class="nav-link active" href="/dashboard.html" id="nav-dashboard"><i class="fa-solid fa-gauge me-1"></i> Dashboard</a>
+          </li>
+          <li class="nav-item admin-only" style="display: none;">
+            <a class="nav-link text-warning" href="/admin.html" id="nav-admin"><i class="fa-solid fa-user-shield me-1"></i> Admin</a>
+          </li>
+        </ul>
+
+        <div class="d-flex align-items-center gap-2 mt-3 mt-lg-0" id="navAuthSection">
+          <a href="/login.html" class="btn btn-outline-light btn-sm guest-only"><i class="fa-solid fa-right-to-bracket me-1"></i> Login</a>
+          <a href="/register.html" class="btn btn-primary btn-sm guest-only"><i class="fa-solid fa-user-plus me-1"></i> Register</a>
+
+          <div class="credit-badge auth-only" style="display: none;" title="Your available credits">
+            <i class="fa-solid fa-bolt text-warning"></i> <span id="navCreditBalance">0 Credits</span>
+          </div>
+          <a href="/profile.html" class="btn btn-outline-light btn-sm auth-only" id="navProfileBtn" style="display: none;">
+            <i class="fa-solid fa-user me-1"></i> <span id="navProfileName">My Profile</span>
+          </a>
+          <button class="btn btn-danger btn-sm auth-only" onclick="logout()" style="display: none;">
+            <i class="fa-solid fa-right-from-bracket me-1"></i> Logout
+          </button>
+        </div>
       </div>
     </div>
- 
-    <div class="row">
-      <div class="col-md-5 mb-4">
-        <div class="card p-4 shadow-sm border-0">
-          <h4 class="mb-3"><i class="fa-solid fa-circle-plus text-primary me-2"></i>Offer New Skill</h4>
-          
-          <!-- enctype="multipart/form-data" added for file upload -->
-          <form id="addSkillForm" enctype="multipart/form-data">
-            <div class="mb-3">
-              <label class="form-label fw-semibold">Skill Title</label>
-              <input type="text" id="skillTitle" class="form-control" placeholder="e.g. Guitar Basics" required>
-            </div>
-            
-            <div class="mb-3">
-              <label class="form-label fw-semibold">Category</label>
-              <select id="skillCategory" class="form-select" required>
-                <option value="Programming">Programming</option>
-                <option value="Music">Music</option>
-                <option value="Language">Language</option>
-                <option value="Cooking">Cooking</option>
-                <option value="Fitness">Fitness</option>
-              </select>
-            </div>
-            
-            <div class="mb-3">
-              <label class="form-label fw-semibold">Description</label>
-              <textarea id="skillDesc" class="form-control" rows="3" placeholder="What will you teach?" required></textarea>
-            </div>
+  </nav>
 
-            <!-- PDF Upload Input Added -->
-            <div class="mb-3">
-              <label class="form-label fw-semibold">
-                <i class="fa-solid fa-file-pdf text-danger me-1"></i> Attach PDF Syllabus/Notes (Optional)
-              </label>
-              <input type="file" id="skillPdf" accept="application/pdf" class="form-control">
-            </div>
-
-            <!-- Video Upload Input Added -->
-            <div class="mb-3">
-              <label class="form-label fw-semibold">
-                <i class="fa-solid fa-video text-primary me-1"></i> Attach Demo Video (Optional)
-              </label>
-              <input type="file" id="skillVideo" accept="video/mp4,video/webm,video/mkv" class="form-control">
-            </div>
-
-            <button type="submit" class="btn btn-primary w-100 fw-bold py-2">
-              <i class="fa-solid fa-paper-plane me-1"></i> Post Skill
-            </button>
-          </form>
+  <!-- Main Dashboard Content -->
+  <main class="flex-grow-1">
+    <div class="container my-5">
+      <!-- Welcome & Stats Banner -->
+      <div class="row align-items-center mb-4 g-3">
+        <div class="col-md-7">
+          <h2 class="fw-bold mb-1" id="welcomeMsg">Welcome to your Dashboard</h2>
+          <p class="text-muted mb-0">Manage your skills, track booking requests, and exchange knowledge.</p>
+        </div>
+        <div class="col-md-5 text-md-end">
+          <a href="/skills.html" class="btn btn-primary me-2"><i class="fa-solid fa-compass me-1"></i> Explore Skills</a>
+          <a href="/profile.html" class="btn btn-outline-secondary"><i class="fa-solid fa-user-pen me-1"></i> Edit Profile</a>
         </div>
       </div>
 
-      <!-- Quick Actions / Navigation -->
-      <div class="col-md-7 mb-4">
-        <div class="card p-4 h-100 d-flex flex-column justify-content-center text-center shadow-sm border-0">
-          <div class="my-auto py-4">
-            <i class="fa-solid fa-handshake text-info fa-4x mb-3"></i>
-            <h4>Ready to learn something new?</h4>
-            <p class="text-muted max-w-md mx-auto">Explore available skills in your locality and use your credits to request sessions.</p>
-            <a href="/skills.html" class="btn btn-primary mt-2"><i class="fa-solid fa-magnifying-glass me-1"></i> Explore All Skills</a>
+      <!-- Live Stats Cards -->
+      <div class="row g-3 mb-5">
+        <div class="col-md-4">
+          <div class="card stat-card border-0 p-3 shadow-sm border-start border-warning border-4">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <small class="text-muted text-uppercase fw-semibold">Available Credits</small>
+                <h3 class="fw-bold text-dark mt-1 mb-0" id="statCredits">10</h3>
+              </div>
+              <div class="bg-warning bg-opacity-10 text-warning p-3 rounded-circle">
+                <i class="fa-solid fa-bolt fa-2x"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card stat-card border-0 p-3 shadow-sm border-start border-primary border-4">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <small class="text-muted text-uppercase fw-semibold">My Posted Skills</small>
+                <h3 class="fw-bold text-dark mt-1 mb-0" id="statSkills">0</h3>
+              </div>
+              <div class="bg-primary bg-opacity-10 text-primary p-3 rounded-circle">
+                <i class="fa-solid fa-chalkboard-user fa-2x"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card stat-card border-0 p-3 shadow-sm border-start border-info border-4">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <small class="text-muted text-uppercase fw-semibold">Total Sessions</small>
+                <h3 class="fw-bold text-dark mt-1 mb-0" id="statBookings">0</h3>
+              </div>
+              <div class="bg-info bg-opacity-10 text-info p-3 rounded-circle">
+                <i class="fa-solid fa-calendar-check fa-2x"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Area: Offer Skill & Bookings Feed -->
+      <div class="row g-4">
+        <!-- Left: Offer New Skill -->
+        <div class="col-lg-5">
+          <div class="card p-4 shadow-sm border-0 h-100">
+            <div class="d-flex align-items-center mb-3">
+              <div class="bg-primary bg-opacity-10 text-primary p-2 rounded-3 me-2">
+                <i class="fa-solid fa-circle-plus fa-lg"></i>
+              </div>
+              <h4 class="fw-bold mb-0">Offer a New Skill</h4>
+            </div>
+            <p class="text-muted small mb-4">Post what you can teach to earn Skill Credits when you complete sessions.</p>
+
+            <div id="formAlertBox"></div>
+
+            <form id="addSkillForm" enctype="multipart/form-data">
+              <div class="mb-3">
+                <label class="form-label fw-semibold">Skill Title <span class="text-danger">*</span></label>
+                <input type="text" id="skillTitle" class="form-control" placeholder="e.g. JavaScript Essentials, Guitar for Beginners" required>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label fw-semibold">Category <span class="text-danger">*</span></label>
+                <select id="skillCategory" class="form-select" required>
+                  <option value="Programming">Programming</option>
+                  <option value="Design">Design</option>
+                  <option value="Music">Music</option>
+                  <option value="Language">Language</option>
+                  <option value="Cooking">Cooking</option>
+                  <option value="Fitness">Fitness</option>
+                </select>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label fw-semibold">Description <span class="text-danger">*</span></label>
+                <textarea id="skillDesc" class="form-control" rows="3" placeholder="Describe the curriculum, topics covered, and session structure..." required></textarea>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label fw-semibold small">
+                  <i class="fa-solid fa-file-pdf text-danger me-1"></i> Attach Syllabus or Notes (PDF, Optional)
+                </label>
+                <input type="file" id="skillPdf" accept="application/pdf" class="form-control form-control-sm">
+              </div>
+
+              <div class="mb-4">
+                <label class="form-label fw-semibold small">
+                  <i class="fa-solid fa-video text-primary me-1"></i> Attach Demo Video (MP4 / WebM, Optional)
+                </label>
+                <input type="file" id="skillVideo" accept="video/mp4,video/webm" class="form-control form-control-sm">
+              </div>
+
+              <button type="submit" id="btnSubmitSkill" class="btn btn-primary w-100 fw-bold py-2 shadow-sm">
+                <i class="fa-solid fa-paper-plane me-1"></i> Publish Skill Offer
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Right: Bookings & Sessions Hub -->
+        <div class="col-lg-7">
+          <div class="card p-4 shadow-sm border-0 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <div class="d-flex align-items-center">
+                <div class="bg-info bg-opacity-10 text-info p-2 rounded-3 me-2">
+                  <i class="fa-solid fa-handshake fa-lg"></i>
+                </div>
+                <h4 class="fw-bold mb-0">Skill Exchange Sessions</h4>
+              </div>
+              <button class="btn btn-sm btn-outline-secondary" onclick="loadDashboardData()" title="Refresh sessions">
+                <i class="fa-solid fa-rotate-right"></i>
+              </button>
+            </div>
+
+            <!-- Tabs Navigation -->
+            <ul class="nav nav-pills mb-3" id="bookingTabs" role="tablist">
+              <li class="nav-item" role="presentation">
+                <button class="nav-link active fw-semibold" id="mentor-tab" data-bs-toggle="pill" data-bs-target="#mentorSessions" type="button" role="tab">
+                  <i class="fa-solid fa-user-tie me-1"></i> Requests for My Skills (<span id="mentorCount">0</span>)
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link fw-semibold" id="learner-tab" data-bs-toggle="pill" data-bs-target="#learnerSessions" type="button" role="tab">
+                  <i class="fa-solid fa-graduation-cap me-1"></i> Sessions I Booked (<span id="learnerCount">0</span>)
+                </button>
+              </li>
+            </ul>
+
+            <!-- Tabs Content -->
+            <div class="tab-content flex-grow-1" id="bookingTabsContent">
+              <!-- Mentor Tab Pane -->
+              <div class="tab-pane fade show active" id="mentorSessions" role="tabpanel">
+                <div id="mentorBookingsList" class="py-2">
+                  <div class="text-center py-4">
+                    <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                    <span class="ms-2 text-muted">Loading requests...</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Learner Tab Pane -->
+              <div class="tab-pane fade" id="learnerSessions" role="tabpanel">
+                <div id="learnerBookingsList" class="py-2">
+                  <div class="text-center py-4">
+                    <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                    <span class="ms-2 text-muted">Loading sessions...</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
       </div>
     </div>
-  </div>
+  </main>
 
+  <!-- Footer Section -->
+  <footer class="w-100 bg-dark text-light py-4 border-top border-secondary border-opacity-25">
+    <div class="container">
+      <div class="row align-items-center g-3">
+        <div class="col-md-6 text-center text-md-start">
+          <a class="navbar-brand text-warning fw-bold fs-5 d-inline-block mb-1" href="/">
+            <i class="fa-solid fa-repeat text-info me-2"></i>Swa<span class="text-white">ppr</span>
+          </a>
+          <p class="text-secondary small mb-0">
+            &copy; 2026 Swappr Skill Exchange Platform. All rights reserved.
+          </p>
+        </div>
+        <div class="col-md-6 text-center text-md-end">
+          <ul class="list-inline mb-0 small">
+            <li class="list-inline-item me-3">
+              <a href="/dashboard.html" class="text-secondary text-decoration-none hover-white">
+                <i class="fa-solid fa-gauge me-1"></i> User Dashboard
+              </a>
+            </li>
+            <li class="list-inline-item me-3">
+              <a href="/skills.html" class="text-secondary text-decoration-none hover-white">
+                <i class="fa-solid fa-compass me-1"></i> Browse Skills
+              </a>
+            </li>
+            <li class="list-inline-item me-3">
+              <a href="/index.html" class="text-secondary text-decoration-none hover-white">
+                <i class="fa-solid fa-house me-1"></i> Home
+              </a>
+            </li>
+            <li class="list-inline-item">
+              <span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-25">
+                <i class="fa-solid fa-circle me-1" style="font-size: 8px;"></i> System Online
+              </span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/js/main.js"></script>
   <script>
-    const user = JSON.parse(localStorage.getItem('user'));
     const token = localStorage.getItem('token');
-
-    if (!token || !user) {
+    if (!token) {
       window.location.href = '/login.html';
-    } else {
-      document.getElementById('welcomeMsg').innerText = `Welcome back, ${user.name}!`;
-      document.getElementById('creditBalance').innerText = `${user.credits || 10} Credits`;
     }
 
-    document.getElementById('logoutBtn').addEventListener('click', () => {
-      localStorage.clear();
-      window.location.href = '/login.html';
-    });
+    async function loadDashboardData() {
+      try {
+        // 1. Fetch user profile & user posted skills
+        const profileRes = await fetch('/api/users/profile', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (profileRes.ok) {
+          const profileData = await profileRes.json();
+          const user = profileData.user;
+          const mySkills = profileData.mySkills || [];
 
-    // Updated Form Submit Logic to handle File Uploads via FormData
+          if (user) {
+            document.getElementById('welcomeMsg').innerText = `Welcome back, ${user.name}!`;
+            document.getElementById('statCredits').innerText = user.credits ?? 10;
+            document.getElementById('navCreditBalance').innerText = `${user.credits ?? 10} Credits`;
+            document.getElementById('statSkills').innerText = mySkills.length;
+          }
+        }
+
+        // 2. Fetch all bookings
+        const bookingsRes = await fetch('/api/bookings/my-bookings', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (bookingsRes.ok) {
+          const bookings = await bookingsRes.json();
+          document.getElementById('statBookings').innerText = bookings.length;
+          renderBookings(bookings);
+        }
+      } catch (err) {
+        console.error('Failed to load dashboard data:', err);
+      }
+    }
+
+    function renderBookings(bookings) {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const userId = user._id || user.id;
+
+      const mentorBookings = bookings.filter(b => b.mentor?._id === userId || b.mentor === userId);
+      const learnerBookings = bookings.filter(b => b.learner?._id === userId || b.learner === userId);
+
+      document.getElementById('mentorCount').innerText = mentorBookings.length;
+      document.getElementById('learnerCount').innerText = learnerBookings.length;
+
+      // Render Mentor Bookings (Sessions requested from me)
+      const mentorContainer = document.getElementById('mentorBookingsList');
+      if (mentorBookings.length === 0) {
+        mentorContainer.innerHTML = `
+          <div class="text-center py-4 text-muted">
+            <i class="fa-solid fa-inbox fa-2x mb-2 d-block text-secondary opacity-50"></i>
+            <p class="small mb-0">No one has booked your skills yet. Post more skills to get discovered!</p>
+          </div>
+        `;
+      } else {
+        mentorContainer.innerHTML = mentorBookings.map(b => {
+          const learnerName = b.learner?.name || 'Learner';
+          const skillTitle = b.skill?.title || 'Skill Session';
+          const isPending = b.status === 'Pending';
+          return `
+            <div class="border rounded-3 p-3 mb-2 bg-light">
+              <div class="d-flex justify-content-between align-items-start">
+                <div>
+                  <h6 class="fw-bold mb-1">${escapeHtml(skillTitle)}</h6>
+                  <p class="small text-muted mb-2">Requested by: <strong>${escapeHtml(learnerName)}</strong></p>
+                </div>
+                <span class="badge ${isPending ? 'bg-warning text-dark' : 'bg-success'}">${b.status}</span>
+              </div>
+              <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+                <small class="text-muted"><i class="fa-regular fa-clock me-1"></i> ${new Date(b.createdAt).toLocaleDateString()}</small>
+                ${isPending ? `
+                  <button class="btn btn-sm btn-success fw-semibold" onclick="completeSession('${b._id}')">
+                    <i class="fa-solid fa-check me-1"></i> Mark Completed (+1 Credit)
+                  </button>
+                ` : `
+                  <span class="text-success small fw-semibold"><i class="fa-solid fa-circle-check me-1"></i> Credit Awarded</span>
+                `}
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // Render Learner Bookings (Sessions I booked)
+      const learnerContainer = document.getElementById('learnerBookingsList');
+      if (learnerBookings.length === 0) {
+        learnerContainer.innerHTML = `
+          <div class="text-center py-4 text-muted">
+            <i class="fa-solid fa-compass fa-2x mb-2 d-block text-secondary opacity-50"></i>
+            <p class="small mb-2">You haven't requested any skill sessions yet.</p>
+            <a href="/skills.html" class="btn btn-sm btn-outline-primary">Explore Skills to Learn</a>
+          </div>
+        `;
+      } else {
+        learnerContainer.innerHTML = learnerBookings.map(b => {
+          const mentorName = b.mentor?.name || 'Mentor';
+          const skillTitle = b.skill?.title || 'Skill Session';
+          const isPending = b.status === 'Pending';
+          return `
+            <div class="border rounded-3 p-3 mb-2 bg-light">
+              <div class="d-flex justify-content-between align-items-start">
+                <div>
+                  <h6 class="fw-bold mb-1">${escapeHtml(skillTitle)}</h6>
+                  <p class="small text-muted mb-2">Mentor: <strong>${escapeHtml(mentorName)}</strong></p>
+                </div>
+                <span class="badge ${isPending ? 'bg-warning text-dark' : 'bg-success'}">${b.status}</span>
+              </div>
+              <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+                <small class="text-muted"><i class="fa-regular fa-clock me-1"></i> ${new Date(b.createdAt).toLocaleDateString()}</small>
+                <span class="small text-secondary">${isPending ? 'Awaiting mentor completion' : 'Session Completed'}</span>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    async function completeSession(bookingId) {
+      if (!confirm('Mark this session as completed? 1 credit will be transferred to your account.')) return;
+      try {
+        const res = await fetch(`/api/bookings/${bookingId}/complete`, {
+          method: 'PATCH',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (res.ok) {
+          showAlert('Session completed! 1 Skill Credit added to your balance.', 'success', 'formAlertBox');
+          loadDashboardData();
+        } else {
+          showAlert(data.message || 'Failed to complete session', 'danger', 'formAlertBox');
+        }
+      } catch (err) {
+        showAlert('Network error completing session', 'danger', 'formAlertBox');
+      }
+    }
+
+    // Add Skill Form Handler
     document.getElementById('addSkillForm').addEventListener('submit', async (e) => {
       e.preventDefault();
+
+      const btn = document.getElementById('btnSubmitSkill');
+      const originalText = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Posting Skill...';
 
       const formData = new FormData();
       formData.append('title', document.getElementById('skillTitle').value);
       formData.append('category', document.getElementById('skillCategory').value);
       formData.append('description', document.getElementById('skillDesc').value);
 
-      const pdfFile = document.getElementById('skillPdf').files[0];
-      const videoFile = document.getElementById('skillVideo').files[0];
-
-      if (pdfFile) formData.append('pdf', pdfFile);
-      if (videoFile) formData.append('video', videoFile);
+      const pdf = document.getElementById('skillPdf').files[0];
+      const video = document.getElementById('skillVideo').files[0];
+      if (pdf) formData.append('pdf', pdf);
+      if (video) formData.append('video', video);
 
       try {
         const res = await fetch('/api/skills', {
           method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`
-            // Note: Do NOT set 'Content-Type' header here; browser automatically sets multipart/form-data boundary
-          },
+          headers: { 'Authorization': `Bearer ${token}` },
           body: formData
         });
 
         if (res.ok) {
-          alert('Skill added successfully with files!');
-          window.location.href = '/skills.html';
+          showAlert('Skill added successfully! It is now visible in the catalog.', 'success', 'formAlertBox');
+          document.getElementById('addSkillForm').reset();
+          loadDashboardData();
         } else {
-          const errorData = await res.json().catch(() => null);
-          alert('Failed to add skill: ' + (errorData?.message || res.statusText));
+          const errData = await res.json().catch(() => null);
+          showAlert('Failed to post skill: ' + (errData?.message || res.statusText), 'danger', 'formAlertBox');
         }
       } catch (error) {
-        console.error('Submit error:', error);
-        alert('Server Connection Error!');
+        showAlert('Connection error. Please try again.', 'danger', 'formAlertBox');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
       }
     });
+
+    loadDashboardData();
   </script>
-  </main>
-<!-- Footer Section -->
-<footer class="w-100 bg-dark text-light py-4 border-top border-secondary border-opacity-25">
-  <div class="container">
-    <div class="row align-items-center g-3">
-      
-      <!-- Brand & Copyright -->
-      <div class="col-md-6 text-center text-md-start">
-        <a class="navbar-brand text-warning fw-bold fs-5 d-inline-block mb-1" href="/">
-          <i class="fa-solid fa-repeat text-info me-2"></i>Swa<span class="text-white">ppr</span>
-        </a>
-        <p class="text-secondary small mb-0">
-          &copy; 2026 Swappr Skill Exchange Platform. All rights reserved.
-        </p>
-      </div>
-
-      <!-- Quick Navigation & Links -->
-      <div class="col-md-6 text-center text-md-end">
-        <ul class="list-inline mb-0 small">
-          <li class="list-inline-item me-3">
-            <a href="/dashboard.html" class="text-secondary text-decoration-none hover-white">
-              <i class="fa-solid fa-gauge me-1"></i> User Dashboard
-            </a>
-          </li>
-          <li class="list-inline-item me-3">
-            <a href="/index.html" class="text-secondary text-decoration-none hover-white">
-              <i class="fa-solid fa-house me-1"></i> Home
-            </a>
-          </li>
-          <li class="list-inline-item">
-            <span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-25">
-              <i class="fa-solid fa-circle me-1" style="font-size: 8px;"></i> System Online
-            </span>
-          </li>
-        </ul>
-      </div>
-
-    </div>
-  </div>
-</footer>
 </body>
 </html>

@@ -1,159 +1,227 @@
- <!DOCTYPE html>
-<html lang="bn">
+<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Profile -Swappr</title>
+  <title>My Profile - Swappr</title>
   <link rel="icon" type="image/png" href="logo.png?v=1.0">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="/css/style.css">
 </head>
-<body class="bg-light d-flex flex-column min-vh-100">
+<body>
 
-  <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+  <!-- Navigation Bar -->
+  <nav class="navbar navbar-expand-lg navbar-dark sticky-top shadow-sm">
     <div class="container">
-      <a class="navbar-brand" href="/">
-        <i class="fa-solid fa-repeat text-info me-2"></i>Swa<span>ppr</span>
+      <a class="navbar-brand d-flex align-items-center gap-2" href="/">
+        <i class="fa-solid fa-repeat text-info fs-4"></i>
+        <span>Swa<span class="text-info">ppr</span></span>
       </a>
-      <div class="ms-auto d-flex gap-2">
-        <a href="/dashboard.html" class="btn btn-outline-info btn-sm"><i class="fa-solid fa-gauge me-1"></i> Dashboard</a>
-        <button id="logoutBtn" class="btn btn-sm btn-danger"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+
+      <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain" aria-controls="navbarMain" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="navbarMain">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-3">
+          <li class="nav-item">
+            <a class="nav-link" href="/" id="nav-home"><i class="fa-solid fa-house me-1"></i> Home</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/skills.html" id="nav-skills"><i class="fa-solid fa-compass me-1"></i> Browse Skills</a>
+          </li>
+          <li class="nav-item auth-only" style="display: none;">
+            <a class="nav-link" href="/dashboard.html" id="nav-dashboard"><i class="fa-solid fa-gauge me-1"></i> Dashboard</a>
+          </li>
+          <li class="nav-item admin-only" style="display: none;">
+            <a class="nav-link text-warning" href="/admin.html" id="nav-admin"><i class="fa-solid fa-user-shield me-1"></i> Admin</a>
+          </li>
+        </ul>
+
+        <div class="d-flex align-items-center gap-2 mt-3 mt-lg-0" id="navAuthSection">
+          <a href="/login.html" class="btn btn-outline-light btn-sm guest-only"><i class="fa-solid fa-right-to-bracket me-1"></i> Login</a>
+          <a href="/register.html" class="btn btn-primary btn-sm guest-only"><i class="fa-solid fa-user-plus me-1"></i> Register</a>
+
+          <div class="credit-badge auth-only" style="display: none;" title="Your available credits">
+            <i class="fa-solid fa-bolt text-warning"></i> <span id="navCreditBalance">0 Credits</span>
+          </div>
+          <a href="/profile.html" class="btn btn-outline-light btn-sm auth-only active" id="navProfileBtn" style="display: none;">
+            <i class="fa-solid fa-user me-1"></i> <span id="navProfileName">My Profile</span>
+          </a>
+          <button class="btn btn-danger btn-sm auth-only" onclick="logout()" style="display: none;">
+            <i class="fa-solid fa-right-from-bracket me-1"></i> Logout
+          </button>
+        </div>
       </div>
     </div>
   </nav>
 
+  <!-- Main Profile Content -->
   <main class="flex-grow-1">
-  <div class="container my-5">
-    <div class="row g-4">
-      
-      <!-- Profile Card, Picture Upload & Danger Zone -->
-      <div class="col-md-4">
-        <div class="card p-4 text-center shadow-sm border-0 mb-4">
-          <div class="position-relative d-inline-block mx-auto mb-3">
-            <img id="profileImage" src="https://via.placeholder.com/150" class="rounded-circle img-thumbnail" style="width: 140px; height: 140px; object-fit: cover;">
+    <div class="container my-5">
+      <div id="profileAlertBox"></div>
+
+      <div class="row g-4">
+        <!-- Left: Profile Info, Avatar, Settings & Danger Zone -->
+        <div class="col-lg-4">
+          <!-- Profile Card -->
+          <div class="card p-4 text-center shadow-sm border-0 mb-4">
+            <div class="position-relative d-inline-block mx-auto mb-3">
+              <img id="profileImage" src="dp.jpg" alt="Profile Picture" class="rounded-circle img-thumbnail shadow-sm" style="width: 130px; height: 130px; object-fit: cover;">
+            </div>
+
+            <h4 id="userName" class="fw-bold mb-1">User Name</h4>
+            <p id="userEmail" class="text-muted small mb-2">user@email.com</p>
+            <div class="d-flex justify-content-center gap-2 mb-3">
+              <span id="userRoleBadge" class="badge bg-secondary">Member</span>
+              <span class="badge bg-warning text-dark"><i class="fa-solid fa-bolt me-1"></i><span id="userCreditsCount">10</span> Credits</span>
+            </div>
+
+            <hr class="my-3">
+
+            <!-- Profile Edit Form (Name & Avatar) -->
+            <form id="updateProfileForm" enctype="multipart/form-data">
+              <div class="mb-3 text-start">
+                <label class="form-label small fw-semibold">Display Name</label>
+                <input type="text" id="editNameInput" class="form-control form-control-sm" required>
+              </div>
+
+              <div class="mb-3 text-start">
+                <label class="form-label small fw-semibold">Change Avatar</label>
+                <input type="file" id="avatarInput" accept="image/*" class="form-control form-control-sm">
+              </div>
+
+              <button type="submit" id="btnUpdateProfile" class="btn btn-sm btn-primary w-100 fw-semibold">
+                <i class="fa-solid fa-floppy-disk me-1"></i> Save Changes
+              </button>
+            </form>
           </div>
 
-          <h4 id="userName" class="fw-bold mb-1">User Name</h4>
-          <p id="userEmail" class="text-muted mb-3">user@email.com</p>
-
-          <!-- Avatar Change Form -->
-          <form id="avatarForm" enctype="multipart/form-data" class="mt-2">
-            <label class="btn btn-sm btn-outline-primary w-100 mb-2">
-              <i class="fa-solid fa-camera me-1"></i> Choose Profile Picture
-              <input type="file" id="avatarInput" accept="image/*" hidden required>
-            </label>
-            <button type="submit" class="btn btn-sm btn-success w-100"><i class="fa-solid fa-upload me-1"></i> Save Picture</button>
-          </form>
-        </div>
-
-        <!-- Danger Zone Area with Direct onclick Handler -->
-        <div class="card p-3 shadow-sm border-danger border-1">
-          <div class="card-body text-danger p-2">
-            <h5 class="fw-bold fs-6 mb-2"><i class="fa-solid fa-triangle-exclamation me-1"></i> Danger Zone</h5>
-            <p class="small text-muted mb-3">Once you delete your account, all your posted skills and data will be permanently removed.</p>
-            <button id="deleteAccountBtn" onclick="handleDeleteAccount()" class="btn btn-sm btn-danger w-100 fw-bold">
-              <i class="fa-solid fa-trash-can me-1"></i> Delete My Account
-            </button>
+          <!-- Danger Zone -->
+          <div class="card p-3 shadow-sm border-danger border-1">
+            <div class="card-body text-danger p-2">
+              <h5 class="fw-bold fs-6 mb-2"><i class="fa-solid fa-triangle-exclamation me-1"></i> Danger Zone</h5>
+              <p class="small text-muted mb-3">Once you delete your account, all your posted skills, booking records, and credits will be permanently removed.</p>
+              <button onclick="handleDeleteAccount()" class="btn btn-sm btn-outline-danger w-100 fw-bold">
+                <i class="fa-solid fa-trash-can me-1"></i> Delete My Account
+              </button>
+            </div>
           </div>
         </div>
 
-      </div>
+        <!-- Right: My Posted Skills & Quick Add -->
+        <div class="col-lg-8">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="fw-bold mb-0"><i class="fa-solid fa-list-check text-info me-2"></i>My Posted Skills</h4>
+            <a href="/dashboard.html" class="btn btn-sm btn-primary"><i class="fa-solid fa-plus me-1"></i> Post New Skill</a>
+          </div>
 
-      <!-- Skill Offer Form & My Skills List -->
-      <div class="col-md-8">
-        
-        <!-- Add Skill Collapsible Form -->
-        <div class="card p-4 shadow-sm border-0 mb-4">
-          <h4 class="fw-bold mb-3"><i class="fa-solid fa-plus-circle text-primary me-2"></i>Add New Skill Offer</h4>
-          <form id="addSkillForm" enctype="multipart/form-data">
-            <div class="row">
-              <div class="col-md-6 mb-3">
-                <input type="text" id="skillTitle" class="form-control" placeholder="Skill Title" required>
-              </div>
-              <div class="col-md-6 mb-3">
-                <select id="skillCategory" class="form-select" required>
-                  <option value="Programming">Programming</option>
-                  <option value="Music">Music</option>
-                  <option value="Language">Language</option>
-                  <option value="Design">Design</option>
-                </select>
-              </div>
+          <!-- Skills Feed Container -->
+          <div id="mySkillsContainer">
+            <div class="text-center py-5">
+              <div class="spinner-border text-primary" role="status"></div>
+              <p class="text-muted mt-2">Loading your skills...</p>
             </div>
-            <div class="mb-3">
-              <textarea id="skillDesc" class="form-control" rows="2" placeholder="Description" required></textarea>
-            </div>
-            <div class="row">
-              <div class="col-md-6 mb-3">
-                <label class="form-label small fw-semibold"><i class="fa-solid fa-file-pdf text-danger"></i> PDF (Optional)</label>
-                <input type="file" id="skillPdf" accept="application/pdf" class="form-control form-control-sm">
-              </div>
-              <div class="col-md-6 mb-3">
-                <label class="form-label small fw-semibold"><i class="fa-solid fa-video text-primary"></i> Video (Optional)</label>
-                <input type="file" id="skillVideo" accept="video/*" class="form-control form-control-sm">
-              </div>
-            </div>
-            <button type="submit" class="btn btn-primary fw-bold px-4"><i class="fa-solid fa-paper-plane me-1"></i> Publish</button>
-          </form>
+          </div>
         </div>
-
-        <!-- My Skills Feed -->
-        <h4 class="fw-bold mb-3"><i class="fa-solid fa-list-check text-info me-2"></i>My Posted Skills</h4>
-        <div id="mySkillsContainer">
-          <!-- Dynamic Skill Cards -->
-        </div>
-
       </div>
     </div>
-  </div>
+  </main>
 
+  <!-- Footer Section -->
+  <footer class="w-100 bg-dark text-light py-4 border-top border-secondary border-opacity-25">
+    <div class="container">
+      <div class="row align-items-center g-3">
+        <div class="col-md-6 text-center text-md-start">
+          <a class="navbar-brand text-warning fw-bold fs-5 d-inline-block mb-1" href="/">
+            <i class="fa-solid fa-repeat text-info me-2"></i>Swa<span class="text-white">ppr</span>
+          </a>
+          <p class="text-secondary small mb-0">
+            &copy; 2026 Swappr Skill Exchange Platform. All rights reserved.
+          </p>
+        </div>
+        <div class="col-md-6 text-center text-md-end">
+          <ul class="list-inline mb-0 small">
+            <li class="list-inline-item me-3">
+              <a href="/dashboard.html" class="text-secondary text-decoration-none hover-white">
+                <i class="fa-solid fa-gauge me-1"></i> User Dashboard
+              </a>
+            </li>
+            <li class="list-inline-item me-3">
+              <a href="/skills.html" class="text-secondary text-decoration-none hover-white">
+                <i class="fa-solid fa-compass me-1"></i> Browse Skills
+              </a>
+            </li>
+            <li class="list-inline-item me-3">
+              <a href="/index.html" class="text-secondary text-decoration-none hover-white">
+                <i class="fa-solid fa-house me-1"></i> Home
+              </a>
+            </li>
+            <li class="list-inline-item">
+              <span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-25">
+                <i class="fa-solid fa-circle me-1" style="font-size: 8px;"></i> System Online
+              </span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/js/main.js"></script>
   <script>
     const token = localStorage.getItem('token');
-
     if (!token) {
       window.location.href = '/login.html';
     }
 
-    // Load Profile and User Skills
-    // Updated Load Profile and User Skills
-async function loadProfile() {
-  try {
-    const res = await fetch('/api/users/profile', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
+    async function loadProfile() {
+      try {
+        const res = await fetch('/api/users/profile', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
 
-    const data = await res.json();
-    console.log('Profile Data Loaded:', data); // Debugging Log
+        if (res.ok) {
+          const data = await res.json();
+          const user = data.user || {};
+          const mySkills = data.mySkills || [];
 
-    if (res.ok) {
-      // Backend structured response matching (data.user dynamic handling)
-      const userData = data.user || data;
+          document.getElementById('userName').innerText = user.name || 'User';
+          document.getElementById('editNameInput').value = user.name || '';
+          document.getElementById('userEmail').innerText = user.email || '';
+          document.getElementById('userCreditsCount').innerText = user.credits ?? 10;
+          document.getElementById('userRoleBadge').innerText = user.role === 'admin' ? 'Administrator' : 'Member';
+          document.getElementById('userRoleBadge').className = `badge ${user.role === 'admin' ? 'bg-danger' : 'bg-primary'}`;
 
-      if (userData.name) {
-        document.getElementById('userName').innerText = userData.name;
+          if (user.avatar) {
+            document.getElementById('profileImage').src = user.avatar;
+          }
+
+          renderMySkills(mySkills);
+        } else {
+          showAlert('Failed to load profile data', 'danger', 'profileAlertBox');
+        }
+      } catch (err) {
+        showAlert('Network error loading profile', 'danger', 'profileAlertBox');
       }
-      if (userData.email) {
-        document.getElementById('userEmail').innerText = userData.email;
-      }
-      if (userData.avatar) {
-        document.getElementById('profileImage').src = userData.avatar;
-      }
-
-      // Render User's Skills List
-      renderMySkills(data.mySkills || data.skills || []);
-    } else {
-      console.error('Failed to load profile:', data.message);
     }
-  } catch (err) {
-    console.error('Profile fetch error:', err);
-  }
-}
 
-    // Render My Skills with Delete Option
     function renderMySkills(skills) {
       const container = document.getElementById('mySkillsContainer');
       if (!skills || skills.length === 0) {
-        container.innerHTML = '<div class="alert alert-info">You haven\'t added any skills yet.</div>';
+        container.innerHTML = `
+          <div class="card p-4 text-center shadow-sm border-0 text-muted">
+            <i class="fa-solid fa-circle-question fa-3x mb-3 text-secondary opacity-50"></i>
+            <h5>You haven't posted any skills yet</h5>
+            <p class="small mb-3">Share your talents and start earning credits when others learn from you.</p>
+            <div>
+              <a href="/dashboard.html" class="btn btn-primary btn-sm"><i class="fa-solid fa-plus me-1"></i> Offer a Skill</a>
+            </div>
+          </div>
+        `;
         return;
       }
 
@@ -161,25 +229,64 @@ async function loadProfile() {
         <div class="card p-3 shadow-sm border-0 mb-3">
           <div class="d-flex justify-content-between align-items-start">
             <div>
-              <h5 class="fw-bold mb-1">${s.title}</h5>
-              <span class="badge bg-info text-dark">${s.category}</span>
+              <h5 class="fw-bold mb-1">${escapeHtml(s.title)}</h5>
+              <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2 py-1 rounded-pill small">${escapeHtml(s.category)}</span>
             </div>
-            <button class="btn btn-sm btn-outline-danger" onclick="deleteSkill('${s._id}')">
-              <i class="fa-solid fa-trash"></i> Delete
+            <button class="btn btn-sm btn-outline-danger" onclick="deleteSkill('${s._id}', '${escapeHtml(s.title)}')">
+              <i class="fa-solid fa-trash me-1"></i> Delete
             </button>
           </div>
-          <p class="text-muted my-2">${s.description}</p>
-          <div class="d-flex gap-2">
-            ${s.pdfFile ? `<a href="${s.pdfFile}" target="_blank" class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-file-pdf text-danger"></i> PDF File</a>` : ''}
-            ${s.videoFile ? `<a href="${s.videoFile}" target="_blank" class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-video text-primary"></i> Video File</a>` : ''}
+          <p class="text-secondary small my-2">${escapeHtml(s.description)}</p>
+          <div class="d-flex flex-wrap gap-2 pt-2 border-top">
+            ${s.pdfFile ? `<a href="${s.pdfFile}" target="_blank" class="btn btn-sm btn-outline-danger"><i class="fa-solid fa-file-pdf me-1"></i> View PDF</a>` : ''}
+            ${s.videoFile ? `<a href="${s.videoFile}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="fa-solid fa-video me-1"></i> View Video</a>` : ''}
           </div>
         </div>
       `).join('');
     }
 
-    // Delete Skill Function
-    async function deleteSkill(skillId) {
-      if (!confirm('Are you sure you want to delete this skill?')) return;
+    // Update Profile (Name & Avatar)
+    document.getElementById('updateProfileForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('btnUpdateProfile');
+      const originalText = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Saving...';
+
+      const formData = new FormData();
+      const name = document.getElementById('editNameInput').value;
+      if (name) formData.append('name', name);
+
+      const avatarFile = document.getElementById('avatarInput').files[0];
+      if (avatarFile) formData.append('avatar', avatarFile);
+
+      try {
+        const res = await fetch('/api/users/profile', {
+          method: 'PUT',
+          headers: { 'Authorization': `Bearer ${token}` },
+          body: formData
+        });
+
+        if (res.ok) {
+          const updatedUser = await res.json();
+          localStorage.setItem('user', JSON.stringify(updatedUser));
+          showAlert('Profile updated successfully!', 'success', 'profileAlertBox');
+          loadProfile();
+          initNavbar();
+        } else {
+          const errData = await res.json().catch(() => null);
+          showAlert(errData?.message || 'Failed to update profile', 'danger', 'profileAlertBox');
+        }
+      } catch (err) {
+        showAlert('Connection error while updating profile', 'danger', 'profileAlertBox');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+      }
+    });
+
+    async function deleteSkill(skillId, skillTitle) {
+      if (!confirm(`Are you sure you want to delete the skill "${skillTitle}"?`)) return;
 
       try {
         const res = await fetch(`/api/skills/${skillId}`, {
@@ -188,144 +295,39 @@ async function loadProfile() {
         });
 
         if (res.ok) {
-          alert('Skill deleted successfully!');
+          showAlert('Skill deleted successfully', 'success', 'profileAlertBox');
           loadProfile();
         } else {
-          alert('Failed to delete skill.');
+          showAlert('Failed to delete skill', 'danger', 'profileAlertBox');
         }
       } catch (err) {
-        console.error(err);
+        showAlert('Network error deleting skill', 'danger', 'profileAlertBox');
       }
     }
 
-    // Global Account Delete Function linked to onclick attribute
     async function handleDeleteAccount() {
-      const confirmed = confirm('Are you sure you want to delete your account? This action cannot be undone!');
-      
+      const confirmed = confirm('WARNING: Are you sure you want to permanently delete your account? All your data and credits will be erased forever.');
       if (!confirmed) return;
 
       try {
         const res = await fetch('/api/users/profile', {
           method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
+          headers: { 'Authorization': `Bearer ${token}` }
         });
-
-        const data = await res.json();
 
         if (res.ok) {
           alert('Your account has been deleted.');
           localStorage.clear();
           window.location.href = '/login.html';
         } else {
-          alert(data.message || 'Failed to delete account');
+          showAlert('Failed to delete account', 'danger', 'profileAlertBox');
         }
       } catch (error) {
-        console.error('Error deleting account:', error);
-        alert('Something went wrong. Please try again.');
+        showAlert('Error processing account deletion', 'danger', 'profileAlertBox');
       }
     }
 
-    // Upload Profile Picture Form
-    document.getElementById('avatarForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const file = document.getElementById('avatarInput').files[0];
-      if (!file) return;
-
-      const formData = new FormData();
-      formData.append('avatar', file);
-
-      const res = await fetch('/api/users/profile', {
-        method: 'PUT',
-        headers: { 'Authorization': `Bearer ${token}` },
-        body: formData
-      });
-
-      if (res.ok) {
-        alert('Profile picture updated successfully!');
-        loadProfile();
-      } else {
-        alert('Failed to update picture.');
-      }
-    });
-
-    // Add Skill Form
-    document.getElementById('addSkillForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-      const formData = new FormData();
-      formData.append('title', document.getElementById('skillTitle').value);
-      formData.append('category', document.getElementById('skillCategory').value);
-      formData.append('description', document.getElementById('skillDesc').value);
-
-      const pdf = document.getElementById('skillPdf').files[0];
-      const video = document.getElementById('skillVideo').files[0];
-      if (pdf) formData.append('pdf', pdf);
-      if (video) formData.append('video', video);
-
-      const res = await fetch('/api/skills', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` },
-        body: formData
-      });
-
-      if (res.ok) {
-        alert('Skill added successfully!');
-        document.getElementById('addSkillForm').reset();
-        loadProfile();
-      } else {
-        alert('Failed to add skill.');
-      }
-    });
-
-    // Logout Handler
-    document.getElementById('logoutBtn').addEventListener('click', () => {
-      localStorage.clear();
-      window.location.href = '/login.html';
-    });
-
     loadProfile();
   </script>
-  </main>
-<!-- Footer Section -->
-<footer class="w-100 bg-dark text-light py-4 border-top border-secondary border-opacity-25">
-  <div class="container">
-    <div class="row align-items-center g-3">
-      
-      <!-- Brand & Copyright -->
-      <div class="col-md-6 text-center text-md-start">
-        <a class="navbar-brand text-warning fw-bold fs-5 d-inline-block mb-1" href="/">
-          <i class="fa-solid fa-repeat text-info me-2"></i>Swa<span class="text-white">ppr</span>
-        </a>
-        <p class="text-secondary small mb-0">
-          &copy; 2026 Swappr Skill Exchange Platform. All rights reserved.
-        </p>
-      </div>
-
-      <!-- Quick Navigation & Links -->
-      <div class="col-md-6 text-center text-md-end">
-        <ul class="list-inline mb-0 small">
-          <li class="list-inline-item me-3">
-            <a href="/dashboard.html" class="text-secondary text-decoration-none hover-white">
-              <i class="fa-solid fa-gauge me-1"></i> User Dashboard
-            </a>
-          </li>
-          <li class="list-inline-item me-3">
-            <a href="/index.html" class="text-secondary text-decoration-none hover-white">
-              <i class="fa-solid fa-house me-1"></i> Home
-            </a>
-          </li>
-          <li class="list-inline-item">
-            <span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-25">
-              <i class="fa-solid fa-circle me-1" style="font-size: 8px;"></i> System Online
-            </span>
-          </li>
-        </ul>
-      </div>
-
-    </div>
-  </div>
-</footer>
 </body>
 </html>

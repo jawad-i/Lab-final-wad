@@ -1,159 +1,307 @@
-const API_BASE_URL = ''; 
+// ==========================================
+// SkillSwap Global Frontend Logic & UI Controller
+// ==========================================
+const API_BASE_URL = '';
 
+/**
+ * Global Logout handler
+ */
 function logout() {
-  localStorage.clear();
-  window.location.href = 'login.html';
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+  window.location.href = '/login.html';
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+/**
+ * Universal Navbar Controller
+ * Works consistently across all pages
+ */
+async function initNavbar() {
   const token = localStorage.getItem('token');
   let user = null;
 
   try {
-    const userData = localStorage.getItem('user');
-    if (userData) user = JSON.parse(userData);
-  } catch (err) {
-    console.error("User JSON parse error:", err);
+    const raw = localStorage.getItem('user');
+    if (raw) user = JSON.parse(raw);
+  } catch (e) {
+    console.warn('Error parsing user JSON:', e);
   }
 
-  const skillFormContainer = document.getElementById('skillFormContainer');
+  // Determine current page for active nav link
+  const path = window.location.pathname.toLowerCase();
+  const navLinks = {
+    'nav-home': path === '/' || path.endsWith('/index.html') || path === '',
+    'nav-skills': path.endsWith('/skills.html'),
+    'nav-dashboard': path.endsWith('/dashboard.html'),
+    'nav-profile': path.endsWith('/profile.html'),
+    'nav-admin': path.endsWith('/admin.html')
+  };
+
+  Object.entries(navLinks).forEach(([id, isActive]) => {
+    const el = document.getElementById(id);
+    if (el) {
+      if (isActive) {
+        el.classList.add('active');
+        el.setAttribute('aria-current', 'page');
+      } else {
+        el.classList.remove('active');
+        el.removeAttribute('aria-current');
+      }
+    }
+  });
+
+  const guestElements = document.querySelectorAll('.guest-only');
+  const authElements = document.querySelectorAll('.auth-only');
+  const adminElements = document.querySelectorAll('.admin-only');
 
   if (token && user) {
-    if (document.getElementById('login-link')) document.getElementById('login-link').style.display = 'none';
-    if (document.getElementById('register-link')) document.getElementById('register-link').style.display = 'none';
-    if (document.getElementById('dashboard-link')) document.getElementById('dashboard-link').style.display = 'inline-block';
-    if (document.getElementById('logout-btn')) document.getElementById('logout-btn').style.display = 'inline-block';
+    guestElements.forEach(el => el.style.setProperty('display', 'none', 'important'));
+    authElements.forEach(el => el.style.setProperty('display', el.classList.contains('d-flex') ? 'flex' : 'inline-block', 'important'));
 
-    // Show skill creation form container ONLY if user is logged in
-    if (skillFormContainer) skillFormContainer.style.display = 'block';
-
-    if (user.role === 'admin' && document.getElementById('admin-link')) {
-      document.getElementById('admin-link').style.display = 'inline-block';
-    }
-  } else {
-    // Hide form if user is not logged in
-    if (skillFormContainer) skillFormContainer.style.display = 'none';
-  }
-
-  fetchSkills();
-});
-
-const addSkillForm = document.getElementById('addSkillForm');
-
-if (addSkillForm) {
-  addSkillForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    const token = localStorage.getItem('token');
-    if (!token) {
-      alert('You must be logged in to post a skill.');
-      window.location.href = 'login.html';
-      return;
+    // Admin-specific elements
+    if (user.role === 'admin') {
+      adminElements.forEach(el => el.style.setProperty('display', 'inline-block', 'important'));
+    } else {
+      adminElements.forEach(el => el.style.setProperty('display', 'none', 'important'));
     }
 
-    const formData = new FormData();
-    formData.append('title', document.getElementById('skillTitle').value);
-    formData.append('category', document.getElementById('skillCategory').value);
-    formData.append('description', document.getElementById('skillDesc').value);
+    // Set credits and name in UI
+    const creditEls = document.querySelectorAll('#navCreditBalance, .credit-display');
+    creditEls.forEach(el => el.innerText = `${user.credits ?? 10} Credits`);
 
-    const pdfFile = document.getElementById('skillPdf')?.files[0];
-    const videoFile = document.getElementById('skillVideo')?.files[0];
+    const nameEls = document.querySelectorAll('#navProfileName, .user-name-display');
+    nameEls.forEach(el => el.innerText = user.name || 'My Profile');
 
-    if (pdfFile) formData.append('pdf', pdfFile);
-    if (videoFile) formData.append('video', videoFile);
-
+    // Asynchronously refresh user session in the background
     try {
-      const headers = {
-        'Authorization': `Bearer ${token}`
-      };
-
-      const res = await fetch(`${API_BASE_URL}/api/skills`, {
-        method: 'POST',
-        headers: headers,
-        body: formData
+      const res = await fetch('/api/auth/me', {
+        headers: { 'Authorization': `Bearer ${token}` }
       });
 
       if (res.ok) {
-        alert('Skill successfully created with attached files!');
-        addSkillForm.reset();
-        fetchSkills();
-      } else {
-        const errorData = await res.json().catch(() => null);
-        const errorMsg = errorData?.message || `Server returned error status ${res.status}`;
-        alert('Error: ' + errorMsg);
+        const freshUser = await res.json();
+        localStorage.setItem('user', JSON.stringify(freshUser));
+        creditEls.forEach(el => el.innerText = `${freshUser.credits ?? 10} Credits`);
+        nameEls.forEach(el => el.innerText = freshUser.name || 'My Profile');
+
+        if (freshUser.role === 'admin') {
+          adminElements.forEach(el => el.style.setProperty('display', 'inline-block', 'important'));
+        }
+      } else if (res.status === 401 || res.status === 403) {
+        logout();
       }
     } catch (err) {
-      console.error('Upload Error:', err);
-      alert('Could not connect to the server.');
+      console.warn('Background session sync offline:', err.message);
     }
-  });
+  } else {
+    // Guest state
+    guestElements.forEach(el => el.style.setProperty('display', 'inline-block', 'important'));
+    authElements.forEach(el => el.style.setProperty('display', 'none', 'important'));
+    adminElements.forEach(el => el.style.setProperty('display', 'none', 'important'));
+  }
 }
 
-async function fetchSkills() {
+/**
+ * Toast / Alert Notification Helper
+ */
+function showAlert(message, type = 'success', containerId = null) {
+  const target = containerId ? document.getElementById(containerId) : null;
+  if (target) {
+    target.innerHTML = `
+      <div class="alert alert-${type} alert-dismissible fade show shadow-sm" role="alert">
+        <i class="fa-solid fa-${type === 'success' ? 'circle-check' : type === 'danger' ? 'circle-exclamation' : 'circle-info'} me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    `;
+    setTimeout(() => {
+      if (target) target.innerHTML = '';
+    }, 5000);
+  } else {
+    alert(message);
+  }
+}
+
+// ==========================================
+// Page-Specific Controllers on DOM Ready
+// ==========================================
+document.addEventListener('DOMContentLoaded', () => {
+  initNavbar();
+
+  const token = localStorage.getItem('token');
+  const path = window.location.pathname.toLowerCase();
+
+  // Authentication guards for protected routes
+  const protectedPages = ['/dashboard.html', '/profile.html', '/admin.html'];
+  if (protectedPages.some(p => path.endsWith(p)) && !token) {
+    window.location.href = '/login.html';
+    return;
+  }
+
+  // Redirect logged-in users away from auth pages
+  const authPages = ['/login.html', '/register.html'];
+  if (authPages.some(p => path.endsWith(p)) && token) {
+    window.location.href = '/dashboard.html';
+    return;
+  }
+
+  // Index Page specific initialization
+  const skillsContainer = document.getElementById('skillsContainer');
+  const skillFormContainer = document.getElementById('skillFormContainer');
+  if (skillsContainer) {
+    if (token) {
+      if (skillFormContainer) skillFormContainer.style.display = 'block';
+      const feedCol = document.getElementById('skillsFeedCol');
+      if (feedCol) {
+        feedCol.className = 'col-lg-7';
+      }
+    } else {
+      if (skillFormContainer) skillFormContainer.style.display = 'none';
+      const feedCol = document.getElementById('skillsFeedCol');
+      if (feedCol) {
+        feedCol.className = 'col-lg-9 mx-auto';
+      }
+    }
+    fetchIndexSkills();
+  }
+
+  // Index Add Skill form handler
+  const indexSkillForm = document.getElementById('addSkillForm');
+  if (indexSkillForm && skillsContainer) {
+    indexSkillForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!token) {
+        window.location.href = '/login.html';
+        return;
+      }
+
+      const submitBtn = indexSkillForm.querySelector('button[type="submit"]');
+      const originalText = submitBtn ? submitBtn.innerHTML : '';
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Publishing...';
+      }
+
+      const formData = new FormData();
+      formData.append('title', document.getElementById('skillTitle').value);
+      formData.append('category', document.getElementById('skillCategory').value);
+      formData.append('description', document.getElementById('skillDesc').value);
+
+      const pdf = document.getElementById('skillPdf')?.files[0];
+      const video = document.getElementById('skillVideo')?.files[0];
+      if (pdf) formData.append('pdf', pdf);
+      if (video) formData.append('video', video);
+
+      try {
+        const res = await fetch('/api/skills', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` },
+          body: formData
+        });
+
+        if (res.ok) {
+          showAlert('Skill posted successfully!', 'success');
+          indexSkillForm.reset();
+          fetchIndexSkills();
+        } else {
+          const err = await res.json().catch(() => null);
+          showAlert(err?.message || 'Failed to post skill', 'danger');
+        }
+      } catch (err) {
+        showAlert('Network error: Unable to post skill', 'danger');
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = originalText;
+        }
+      }
+    });
+  }
+});
+
+/**
+ * Fetch and Render Skills for Index Page
+ */
+async function fetchIndexSkills() {
   const container = document.getElementById('skillsContainer');
   if (!container) return;
 
-  container.innerHTML = '<div class="col-12 text-center py-4"><div class="spinner-border text-info" role="status"></div><p class="text-muted mt-2">Loading skills...</p></div>';
+  container.innerHTML = `
+    <div class="col-12 text-center py-5">
+      <div class="spinner-border text-info" role="status"></div>
+      <p class="text-muted mt-2">Loading latest community skills...</p>
+    </div>
+  `;
 
   try {
     const res = await fetch('/api/skills');
-
-    const contentType = res.headers.get('content-type') || '';
-    if (!contentType.includes('application/json')) {
-      throw new Error(`Server returned status ${res.status} non-JSON response`);
-    }
-
-    if (!res.ok) {
-      const errData = await res.json().catch(() => null);
-      throw new Error(errData?.message || `Server status: ${res.status}`);
-    }
-
+    if (!res.ok) throw new Error('Could not fetch skills');
     const skills = await res.json();
 
     if (!skills || skills.length === 0) {
-      container.innerHTML = '<div class="col-12"><p class="text-muted">No skills posted yet.</p></div>';
+      container.innerHTML = `
+        <div class="col-12 text-center py-5">
+          <i class="fa-solid fa-seedling text-muted fa-3x mb-3"></i>
+          <p class="text-muted fs-5">No skills posted yet. Be the first to share your knowledge!</p>
+        </div>
+      `;
       return;
     }
 
     container.innerHTML = skills.map(s => {
-      const videoSrc = s.videoFile ? (s.videoFile.startsWith('http') || s.videoFile.startsWith('data:') ? s.videoFile : `${API_BASE_URL}${s.videoFile.startsWith('/') ? '' : '/'}${s.videoFile}`) : null;
-      const pdfSrc = s.pdfFile ? (s.pdfFile.startsWith('http') || s.pdfFile.startsWith('data:') ? s.pdfFile : `${API_BASE_URL}${s.pdfFile.startsWith('/') ? '' : '/'}${s.pdfFile}`) : null;
-      const authorName = s.user?.name ? s.user.name : 'Anonymous';
-
+      const authorName = s.user?.name || 'Community Member';
       return `
-        <div class="col-12">
-          <div class="card p-3 shadow-sm border-0 mb-3">
-            <div class="d-flex justify-content-between align-items-start">
+        <div class="col-12 mb-3">
+          <div class="card p-4 shadow-sm border-0">
+            <div class="d-flex justify-content-between align-items-start mb-2">
               <div>
-                <h5 class="fw-bold mb-1">${s.title}</h5>
-                <small class="text-muted">Posted by: ${authorName}</small>
+                <h5 class="fw-bold mb-1">${escapeHtml(s.title)}</h5>
+                <small class="text-muted"><i class="fa-solid fa-user-circle me-1"></i> Posted by: <strong>${escapeHtml(authorName)}</strong></small>
               </div>
-              <span class="badge bg-info text-dark">${s.category}</span>
+              <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 px-3 py-2 rounded-pill fw-semibold">${escapeHtml(s.category)}</span>
             </div>
-            <p class="text-muted my-2">${s.description}</p>
+            <p class="text-secondary my-2">${escapeHtml(s.description)}</p>
 
-            ${videoSrc ? `
-              <div class="my-2">
-                <video controls class="w-100 rounded" style="max-height: 240px; background-color: #000;">
-                  <source src="${videoSrc}">
-                  Your browser does not support the video tag.
+            ${s.videoFile ? `
+              <div class="my-3">
+                <video controls class="w-100 rounded" style="max-height: 280px; background-color: #000;">
+                  <source src="${s.videoFile}">
+                  Your browser does not support video playback.
                 </video>
               </div>
             ` : ''}
 
-            ${pdfSrc ? `
-              <div class="mt-2">
-                <a href="${pdfSrc}" target="_blank" class="btn btn-sm btn-outline-danger">
-                  <i class="fa-solid fa-file-pdf me-1"></i> View / Download PDF
-                </a>
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mt-3 pt-3 border-top">
+              <div>
+                ${s.pdfFile ? `
+                  <a href="${s.pdfFile}" target="_blank" class="btn btn-sm btn-outline-danger">
+                    <i class="fa-solid fa-file-pdf me-1"></i> View Syllabus / Notes
+                  </a>
+                ` : '<span class="text-muted small"><i class="fa-solid fa-circle-check text-success me-1"></i> Interactive Session</span>'}
               </div>
-            ` : ''}
+              <a href="/skills.html" class="btn btn-sm btn-primary">
+                <i class="fa-solid fa-calendar-check me-1"></i> Book in Catalog
+              </a>
+            </div>
           </div>
         </div>
       `;
     }).join('');
   } catch (err) {
-    console.error('Fetch Error:', err);
-    container.innerHTML = `<div class="col-12"><p class="text-danger">Failed to load skills (${err.message || 'Server error'}). Make sure your server is running.</p></div>`;
+    container.innerHTML = `
+      <div class="col-12 text-center py-4">
+        <p class="text-danger"><i class="fa-solid fa-triangle-exclamation me-1"></i> Failed to load skills. Please check your connection.</p>
+      </div>
+    `;
   }
+}
+
+/**
+ * XSS helper for safe rendering
+ */
+function escapeHtml(text) {
+  if (!text) return '';
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
 }

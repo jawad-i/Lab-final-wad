@@ -114,4 +114,66 @@ footer {
 
 .hover-white:hover {
     color: #ffffff !important;
-}
+}
+
+/* Nav Link Enhancements */
+.nav-link {
+    transition: color 0.2s ease;
+    font-weight: 500;
+}
+
+.nav-link:hover {
+    color: var(--secondary-color) !important;
+}
+
+.nav-link.active {
+    color: var(--secondary-color) !important;
+    font-weight: 600;
+}
+
+/* Button Refinements */
+.btn {
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.2s ease-in-out;
+}
+
+.btn:active {
+    transform: scale(0.98);
+}
+
+.btn-outline-light:hover {
+    color: var(--dark-bg);
+}
+
+/* Form Controls */
+.form-control:focus, .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.25rem rgba(79, 70, 229, 0.15);
+}
+
+/* Nav Tabs */
+.nav-pills .nav-link {
+    color: #64748b;
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+}
+
+.nav-pills .nav-link.active {
+    background-color: var(--primary-color);
+    color: #ffffff !important;
+}
+
+/* Stat Cards */
+.stat-card {
+    background: #ffffff;
+    border-radius: var(--border-radius);
+    padding: 1.25rem;
+    box-shadow: var(--card-shadow);
+    transition: transform 0.2s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+}
+

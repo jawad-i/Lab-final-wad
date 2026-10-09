@@ -1,138 +1,300 @@
- <!DOCTYPE html>
-<html lang="bn">
+<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Browse Skills -Swappr</title>
-   <link rel="icon" type="image/png" href="logo.png?v=1.0">
+  <title>Browse Skills - Swappr</title>
+  <link rel="icon" type="image/png" href="logo.png?v=1.0">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Poppins:wght@600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
 
-  <nav class="navbar navbar-expand-lg navbar-dark shadow-sm">
+  <!-- Navigation Bar -->
+  <nav class="navbar navbar-expand-lg navbar-dark sticky-top shadow-sm">
     <div class="container">
-      <a class="navbar-brand" href="/">
-        <i class="fa-solid fa-repeat text-info me-2"></i>Swa<span>ppr</span>
+      <a class="navbar-brand d-flex align-items-center gap-2" href="/">
+        <i class="fa-solid fa-repeat text-info fs-4"></i>
+        <span>Swa<span class="text-info">ppr</span></span>
       </a>
-      <div class="ms-auto d-flex gap-2">
-        <a href="/dashboard.html" class="btn btn-outline-light btn-sm"><i class="fa-solid fa-gauge me-1"></i> Dashboard</a>
+
+      <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain" aria-controls="navbarMain" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="navbarMain">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-3">
+          <li class="nav-item">
+            <a class="nav-link" href="/" id="nav-home"><i class="fa-solid fa-house me-1"></i> Home</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link active" href="/skills.html" id="nav-skills"><i class="fa-solid fa-compass me-1"></i> Browse Skills</a>
+          </li>
+          <li class="nav-item auth-only" style="display: none;">
+            <a class="nav-link" href="/dashboard.html" id="nav-dashboard"><i class="fa-solid fa-gauge me-1"></i> Dashboard</a>
+          </li>
+          <li class="nav-item admin-only" style="display: none;">
+            <a class="nav-link text-warning" href="/admin.html" id="nav-admin"><i class="fa-solid fa-user-shield me-1"></i> Admin</a>
+          </li>
+        </ul>
+
+        <div class="d-flex align-items-center gap-2 mt-3 mt-lg-0" id="navAuthSection">
+          <a href="/login.html" class="btn btn-outline-light btn-sm guest-only"><i class="fa-solid fa-right-to-bracket me-1"></i> Login</a>
+          <a href="/register.html" class="btn btn-primary btn-sm guest-only"><i class="fa-solid fa-user-plus me-1"></i> Register</a>
+
+          <div class="credit-badge auth-only" style="display: none;" title="Your available credits">
+            <i class="fa-solid fa-bolt text-warning"></i> <span id="navCreditBalance">0 Credits</span>
+          </div>
+          <a href="/profile.html" class="btn btn-outline-light btn-sm auth-only" id="navProfileBtn" style="display: none;">
+            <i class="fa-solid fa-user me-1"></i> <span id="navProfileName">My Profile</span>
+          </a>
+          <button class="btn btn-danger btn-sm auth-only" onclick="logout()" style="display: none;">
+            <i class="fa-solid fa-right-from-bracket me-1"></i> Logout
+          </button>
+        </div>
       </div>
     </div>
   </nav>
 
+  <!-- Main Catalog Content -->
   <main class="flex-grow-1">
-  <div class="container my-5">
-    <!-- Search & Filter Section -->
-    <div class="row mb-4">
-      <div class="col-md-8 mb-2">
-        <div class="input-group">
-          <span class="input-group-text bg-white"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
-          <input type="text" id="searchInput" class="form-control" placeholder="Search skills by title or description..." onkeyup="filterSkills()">
+    <div class="container my-5">
+      <!-- Header & Intro -->
+      <div class="row align-items-center mb-4 g-3">
+        <div class="col-md-7">
+          <h2 class="fw-bold mb-1"><i class="fa-solid fa-compass text-info me-2"></i>Community Skills Catalog</h2>
+          <p class="text-muted mb-0">Discover skills taught by members of your community. Book a session using your credits.</p>
+        </div>
+        <div class="col-md-5 text-md-end">
+          <a href="/dashboard.html" class="btn btn-primary shadow-sm"><i class="fa-solid fa-circle-plus me-1"></i> Offer a Skill</a>
         </div>
       </div>
-      <div class="col-md-4">
-        <select id="categoryFilter" class="form-select" onchange="filterSkills()">
-          <option value="">All Categories</option>
-          <option value="Programming">Programming</option>
-          <option value="Music">Music</option>
-          <option value="Language">Language</option>
-          <option value="Design">Design</option>
-        </select>
+
+      <!-- Search & Filters Card -->
+      <div class="card p-3 shadow-sm border-0 mb-4 bg-white">
+        <div class="row g-2 align-items-center">
+          <div class="col-md-7">
+            <div class="input-group">
+              <span class="input-group-text bg-light border-end-0 text-muted"><i class="fa-solid fa-magnifying-glass"></i></span>
+              <input type="text" id="searchInput" class="form-control bg-light border-start-0" placeholder="Search by title, keyword, or description..." oninput="filterSkills()">
+              <button class="btn btn-outline-secondary" type="button" onclick="clearSearch()" title="Clear Search">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <select id="categoryFilter" class="form-select bg-light" onchange="filterSkills()">
+              <option value="">All Categories</option>
+              <option value="Programming">Programming</option>
+              <option value="Design">Design</option>
+              <option value="Music">Music</option>
+              <option value="Language">Language</option>
+              <option value="Cooking">Cooking</option>
+              <option value="Fitness">Fitness</option>
+            </select>
+          </div>
+          <div class="col-md-2 text-md-end">
+            <span class="badge bg-light text-dark border px-3 py-2 w-100 fs-6">
+              <span id="resultsCount">0</span> skills
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Global Alert / Status Box -->
+      <div id="catalogAlertBox"></div>
+
+      <!-- Skills Grid -->
+      <div class="row g-4" id="skillsGrid">
+        <div class="col-12 text-center py-5">
+          <div class="spinner-border text-info" role="status"></div>
+          <p class="text-muted mt-2">Loading skills...</p>
+        </div>
       </div>
     </div>
+  </main>
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
-      <h2><i class="fa-solid fa-lightbulb text-warning me-2"></i> Available Skills</h2>
-      <a href="/dashboard.html" class="btn btn-primary"><i class="fa-solid fa-plus me-1"></i> Offer a Skill</a>
+  <!-- Footer Section -->
+  <footer class="w-100 bg-dark text-light py-4 border-top border-secondary border-opacity-25">
+    <div class="container">
+      <div class="row align-items-center g-3">
+        <div class="col-md-6 text-center text-md-start">
+          <a class="navbar-brand text-warning fw-bold fs-5 d-inline-block mb-1" href="/">
+            <i class="fa-solid fa-repeat text-info me-2"></i>Swa<span class="text-white">ppr</span>
+          </a>
+          <p class="text-secondary small mb-0">
+            &copy; 2026 Swappr Skill Exchange Platform. All rights reserved.
+          </p>
+        </div>
+        <div class="col-md-6 text-center text-md-end">
+          <ul class="list-inline mb-0 small">
+            <li class="list-inline-item me-3">
+              <a href="/dashboard.html" class="text-secondary text-decoration-none hover-white">
+                <i class="fa-solid fa-gauge me-1"></i> User Dashboard
+              </a>
+            </li>
+            <li class="list-inline-item me-3">
+              <a href="/skills.html" class="text-secondary text-decoration-none hover-white">
+                <i class="fa-solid fa-compass me-1"></i> Browse Skills
+              </a>
+            </li>
+            <li class="list-inline-item me-3">
+              <a href="/index.html" class="text-secondary text-decoration-none hover-white">
+                <i class="fa-solid fa-house me-1"></i> Home
+              </a>
+            </li>
+            <li class="list-inline-item">
+              <span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-25">
+                <i class="fa-solid fa-circle me-1" style="font-size: 8px;"></i> System Online
+              </span>
+            </li>
+          </ul>
+        </div>
+      </div>
     </div>
+  </footer>
 
-    <!-- Skills Grid -->
-    <div class="row g-4" id="skillsGrid">
-      <!-- Dynamic Skill Cards load here -->
-    </div>
-  </div>
-
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/js/main.js"></script>
   <script>
-    let allSkills = []; // সব স্কিল স্টোর থাকবে
+    let allSkills = [];
 
-    // ১. API থেকে স্কিল লোড করার ফাংশন
     async function fetchSkills() {
       const container = document.getElementById('skillsGrid');
-      container.innerHTML = `<div class="col-12 text-center py-5"><div class="spinner-border text-primary" role="status"></div><p class="text-muted mt-2">Loading skills...</p></div>`;
+      container.innerHTML = `
+        <div class="col-12 text-center py-5">
+          <div class="spinner-border text-info" role="status"></div>
+          <p class="text-muted mt-2">Loading skills catalog...</p>
+        </div>
+      `;
+
       try {
         const res = await fetch('/api/skills');
-        const contentType = res.headers.get('content-type') || '';
-        if (!contentType.includes('application/json')) {
-          throw new Error(`Server returned status ${res.status} non-JSON response`);
-        }
+        if (!res.ok) throw new Error('Could not retrieve skills');
         const data = await res.json();
-
-        if (res.ok) {
-          allSkills = Array.isArray(data) ? data : [];
-          renderSkills(allSkills);
-        } else {
-          container.innerHTML = `<div class="col-12 text-center py-5"><p class="text-danger">Failed to load skills: ${data?.message || res.statusText}</p></div>`;
-        }
+        allSkills = Array.isArray(data) ? data : [];
+        renderSkills(allSkills);
       } catch (err) {
-        container.innerHTML = `<div class="col-12 text-center py-5"><p class="text-danger">Error connecting to server (${err.message}).</p></div>`;
+        container.innerHTML = `
+          <div class="col-12 text-center py-5">
+            <p class="text-danger"><i class="fa-solid fa-triangle-exclamation me-1"></i> Error loading skills (${err.message}).</p>
+          </div>
+        `;
       }
     }
 
-    // ২. ফিল্টারিং লজিক (Search + Category Filter)
     function filterSkills() {
-      const query = document.getElementById('searchInput').value.toLowerCase().trim();
+      const query = (document.getElementById('searchInput').value || '').toLowerCase().trim();
       const selectedCategory = document.getElementById('categoryFilter').value;
 
       const filtered = allSkills.filter(skill => {
-        const matchesSearch = (skill.title || '').toLowerCase().includes(query) || 
-                              (skill.description || '').toLowerCase().includes(query);
+        const matchesSearch = !query || 
+          (skill.title || '').toLowerCase().includes(query) || 
+          (skill.description || '').toLowerCase().includes(query);
         
-        const matchesCategory = selectedCategory === '' || skill.category === selectedCategory;
-
+        const matchesCategory = !selectedCategory || skill.category === selectedCategory;
         return matchesSearch && matchesCategory;
       });
 
       renderSkills(filtered);
     }
 
-    // ৩. UI তে স্কিল রেন্ডার করার ফাংশন
+    function clearSearch() {
+      document.getElementById('searchInput').value = '';
+      document.getElementById('categoryFilter').value = '';
+      renderSkills(allSkills);
+    }
+
     function renderSkills(skills) {
       const container = document.getElementById('skillsGrid');
+      document.getElementById('resultsCount').innerText = skills.length;
 
       if (!skills || skills.length === 0) {
-        container.innerHTML = `<div class="col-12 text-center py-5"><p class="text-muted">No skills found matching your search.</p></div>`;
+        container.innerHTML = `
+          <div class="col-12 text-center py-5">
+            <i class="fa-solid fa-magnifying-glass text-muted fa-3x mb-3"></i>
+            <h5 class="text-muted">No skills found matching your filter</h5>
+            <p class="text-secondary small mb-3">Try adjusting your search terms or clearing the category filter.</p>
+            <button class="btn btn-outline-primary btn-sm" onclick="clearSearch()">Clear Filters</button>
+          </div>
+        `;
         return;
       }
 
-      container.innerHTML = skills.map(s => `
-        <div class="col-md-4">
-          <div class="card h-100 p-3 shadow-sm border-0">
-            <div class="card-body d-flex flex-column">
-              <div class="d-flex justify-content-between align-items-center mb-2">
-                <span class="badge bg-primary-subtle text-primary fw-bold px-3 py-2 rounded-pill">${s.category || 'General'}</span>
-                <span class="text-warning fw-bold"><i class="fa-solid fa-clock me-1"></i>${s.duration || 1} Hr</span>
+      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+      const currentUserId = currentUser._id || currentUser.id;
+
+      container.innerHTML = skills.map(s => {
+        const authorName = s.user?.name || 'Community Member';
+        const isOwnSkill = s.user?._id === currentUserId || s.user === currentUserId;
+
+        return `
+          <div class="col-md-6 col-lg-4">
+            <div class="card h-100 p-3 shadow-sm border-0 d-flex flex-column justify-content-between">
+              <div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3 py-1 rounded-pill fw-semibold">
+                    ${escapeHtml(s.category || 'General')}
+                  </span>
+                  <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-2 py-1 rounded-pill">
+                    <i class="fa-solid fa-bolt me-1"></i>1 Credit
+                  </span>
+                </div>
+
+                <h5 class="card-title fw-bold text-dark mt-2 mb-1">${escapeHtml(s.title)}</h5>
+                <small class="text-muted d-block mb-2">
+                  <i class="fa-solid fa-user-circle me-1"></i> By: <strong>${escapeHtml(authorName)}</strong>
+                </small>
+
+                <p class="card-text text-secondary small mb-3">${escapeHtml(s.description)}</p>
+
+                ${s.videoFile ? `
+                  <div class="mb-3">
+                    <video controls class="w-100 rounded" style="max-height: 180px; background-color: #000;">
+                      <source src="${s.videoFile}">
+                      Your browser does not support video playback.
+                    </video>
+                  </div>
+                ` : ''}
               </div>
-              <h5 class="card-title text-dark mt-2 fw-bold">${s.title || 'Untitled Skill'}</h5>
-              <p class="card-text text-muted flex-grow-1">${s.description || 'No description provided.'}</p>
-              <div class="pt-3 border-top d-flex justify-content-between align-items-center mt-3">
-                <small class="text-secondary"><i class="fa-solid fa-user me-1"></i> ${s.user?.name || 'Peer'}</small>
-                <button onclick="bookSkill('${s._id}')" class="btn btn-sm btn-primary ms-auto"><i class="fa-solid fa-calendar-check me-1"></i> Book</button>
+
+              <div class="pt-3 border-top mt-2 d-flex flex-wrap align-items-center justify-content-between gap-2">
+                <div>
+                  ${s.pdfFile ? `
+                    <a href="${s.pdfFile}" target="_blank" class="btn btn-sm btn-outline-danger" title="Download Syllabus">
+                      <i class="fa-solid fa-file-pdf"></i> PDF
+                    </a>
+                  ` : ''}
+                </div>
+
+                <div>
+                  ${isOwnSkill ? `
+                    <span class="badge bg-secondary">Your Skill</span>
+                  ` : `
+                    <button onclick="bookSkill('${s._id}', '${escapeHtml(s.title)}')" class="btn btn-sm btn-primary fw-semibold shadow-sm">
+                      <i class="fa-solid fa-calendar-check me-1"></i> Book Session
+                    </button>
+                  `}
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      `).join('');
+        `;
+      }).join('');
     }
 
-    // ৪. বুকিং করার ফাংশন
-    async function bookSkill(skillId) {
+    async function bookSkill(skillId, skillTitle) {
       const token = localStorage.getItem('token');
       if (!token) {
-        alert('Please login to book a session!');
-        window.location.href = '/login.html';
+        if (confirm('You must be logged in to book a session. Would you like to log in now?')) {
+          window.location.href = '/login.html';
+        }
+        return;
+      }
+
+      if (!confirm(`Book session for "${skillTitle}"? (1 Skill Credit will be used upon completion)`)) {
         return;
       }
 
@@ -146,58 +308,18 @@
           body: JSON.stringify({ skillId })
         });
         const data = await res.json();
-        if(res.ok) {
-          alert('Booking created successfully!');
+        if (res.ok) {
+          showAlert(`Session requested successfully for "${skillTitle}"! You can track it in your Dashboard.`, 'success', 'catalogAlertBox');
+          initNavbar(); // refresh credit display
         } else {
-          alert(data.message || 'Booking failed');
+          showAlert(data.message || 'Booking request failed.', 'danger', 'catalogAlertBox');
         }
       } catch (err) {
-        alert('Server error during booking.');
+        showAlert('Network error while booking. Please try again.', 'danger', 'catalogAlertBox');
       }
     }
 
-    // পেজ লোড হলে স্কিলস আনবে
     fetchSkills();
   </script>
-  </main>
-<!-- Footer Section -->
-<footer class="w-100 bg-dark text-light py-4 border-top border-secondary border-opacity-25">
-  <div class="container">
-    <div class="row align-items-center g-3">
-      
-      <!-- Brand & Copyright -->
-      <div class="col-md-6 text-center text-md-start">
-        <a class="navbar-brand text-warning fw-bold fs-5 d-inline-block mb-1" href="/">
-          <i class="fa-solid fa-repeat text-info me-2"></i>Swa<span class="text-white">ppr</span>
-        </a>
-        <p class="text-secondary small mb-0">
-          &copy; 2026 Swappr Skill Exchange Platform. All rights reserved.
-        </p>
-      </div>
-
-      <!-- Quick Navigation & Links -->
-      <div class="col-md-6 text-center text-md-end">
-        <ul class="list-inline mb-0 small">
-          <li class="list-inline-item me-3">
-            <a href="/dashboard.html" class="text-secondary text-decoration-none hover-white">
-              <i class="fa-solid fa-gauge me-1"></i> User Dashboard
-            </a>
-          </li>
-          <li class="list-inline-item me-3">
-            <a href="/index.html" class="text-secondary text-decoration-none hover-white">
-              <i class="fa-solid fa-house me-1"></i> Home
-            </a>
-          </li>
-          <li class="list-inline-item">
-            <span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-25">
-              <i class="fa-solid fa-circle me-1" style="font-size: 8px;"></i> System Online
-            </span>
-          </li>
-        </ul>
-      </div>
-
-    </div>
-  </div>
-</footer>
 </body>
 </html>

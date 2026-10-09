@@ -271,6 +271,9 @@ app.put(['/api/users/profile', '/users/profile'], ensureDbConnected, protect, (r
       if (req.file) {
         updateData.avatar = bufferToDataURI(req.file);
       }
+      if (req.body && req.body.name && req.body.name.trim()) {
+        updateData.name = req.body.name.trim();
+      }
 
       const updatedUser = await User.findByIdAndUpdate(
         req.user._id,
