@@ -189,6 +189,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const pdf = document.getElementById('skillPdf')?.files[0];
       const video = document.getElementById('skillVideo')?.files[0];
+      const MAX_SIZE = 4.5 * 1024 * 1024; // 4.5MB
+      if (pdf && pdf.size > MAX_SIZE) {
+        showAlert('PDF file exceeds 4.5MB limit. Please upload a smaller document.', 'danger');
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = originalText; }
+        return;
+      }
+      if (video && video.size > MAX_SIZE) {
+        showAlert('Video file exceeds 4.5MB limit. Please upload a shorter or compressed demo.', 'danger');
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = originalText; }
+        return;
+      }
+
       if (pdf) formData.append('pdf', pdf);
       if (video) formData.append('video', video);
 
@@ -264,7 +276,7 @@ async function fetchIndexSkills() {
 
             ${s.videoFile ? `
               <div class="my-3">
-                <video controls class="w-100 rounded" style="max-height: 280px; background-color: #000;">
+                <video controls preload="metadata" class="w-100 rounded shadow-sm" style="max-height: 280px; background-color: #000;">
                   <source src="${s.videoFile}">
                   Your browser does not support video playback.
                 </video>
@@ -272,12 +284,20 @@ async function fetchIndexSkills() {
             ` : ''}
 
             <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mt-3 pt-3 border-top">
-              <div>
+              <div class="d-flex align-items-center gap-1">
                 ${s.pdfFile ? `
-                  <a href="${s.pdfFile}" target="_blank" class="btn btn-sm btn-outline-danger">
-                    <i class="fa-solid fa-file-pdf me-1"></i> View Syllabus / Notes
+                  <a href="${s.pdfFile}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-danger">
+                    <i class="fa-solid fa-file-pdf me-1"></i> View Syllabus
+                  </a>
+                  <a href="${s.pdfFile}?download=1" class="btn btn-sm btn-outline-secondary" download title="Download Syllabus PDF">
+                    <i class="fa-solid fa-download"></i>
                   </a>
                 ` : '<span class="text-muted small"><i class="fa-solid fa-circle-check text-success me-1"></i> Interactive Session</span>'}
+                ${s.videoFile ? `
+                  <a href="${s.videoFile}?download=1" class="btn btn-sm btn-outline-secondary" download title="Download Demo Video">
+                    <i class="fa-solid fa-video me-1"></i><i class="fa-solid fa-download"></i>
+                  </a>
+                ` : ''}
               </div>
               <a href="/skills.html" class="btn btn-sm btn-primary">
                 <i class="fa-solid fa-calendar-check me-1"></i> Book in Catalog

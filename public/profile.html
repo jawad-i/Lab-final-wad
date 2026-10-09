@@ -237,9 +237,23 @@
             </button>
           </div>
           <p class="text-secondary small my-2">${escapeHtml(s.description)}</p>
-          <div class="d-flex flex-wrap gap-2 pt-2 border-top">
-            ${s.pdfFile ? `<a href="${s.pdfFile}" target="_blank" class="btn btn-sm btn-outline-danger"><i class="fa-solid fa-file-pdf me-1"></i> View PDF</a>` : ''}
-            ${s.videoFile ? `<a href="${s.videoFile}" target="_blank" class="btn btn-sm btn-outline-primary"><i class="fa-solid fa-video me-1"></i> View Video</a>` : ''}
+          <div class="d-flex flex-wrap align-items-center gap-2 pt-2 border-top">
+            ${s.pdfFile ? `
+              <a href="${s.pdfFile}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-danger" title="Open Syllabus PDF">
+                <i class="fa-solid fa-file-pdf me-1"></i> View PDF
+              </a>
+              <a href="${s.pdfFile}?download=1" class="btn btn-sm btn-outline-secondary" title="Download Syllabus PDF" download>
+                <i class="fa-solid fa-download me-1"></i> Download
+              </a>
+            ` : ''}
+            ${s.videoFile ? `
+              <a href="${s.videoFile}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary" title="Watch Demo Video">
+                <i class="fa-solid fa-play me-1"></i> Watch Video
+              </a>
+              <a href="${s.videoFile}?download=1" class="btn btn-sm btn-outline-secondary" title="Download Demo Video" download>
+                <i class="fa-solid fa-download"></i>
+              </a>
+            ` : ''}
           </div>
         </div>
       `).join('');

@@ -91,9 +91,38 @@ const skillUpload = upload.fields([
 
 const avatarUpload = upload.single('avatar');
 
+function getMimeType(file) {
+  if (file.mimetype && file.mimetype !== 'application/octet-stream') {
+    return file.mimetype;
+  }
+  const ext = path.extname(file.originalname || '').toLowerCase();
+  if (ext === '.pdf') return 'application/pdf';
+  if (ext === '.mp4') return 'video/mp4';
+  if (ext === '.webm') return 'video/webm';
+  if (ext === '.mkv') return 'video/x-matroska';
+  if (ext === '.png') return 'image/png';
+  if (ext === '.jpg' || ext === '.jpeg') return 'image/jpeg';
+  return file.mimetype || 'application/octet-stream';
+}
+
 function bufferToDataURI(file) {
   if (!file || !file.buffer) return null;
-  return `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
+  const mime = getMimeType(file);
+  return `data:${mime};base64,${file.buffer.toString('base64')}`;
+}
+
+function formatSkillResponse(skill) {
+  if (!skill) return null;
+  const s = skill.toObject ? skill.toObject() : { ...skill };
+  const hasPdf = Boolean(s.pdfFile);
+  const hasVideo = Boolean(s.videoFile);
+  return {
+    ...s,
+    hasPdf,
+    hasVideo,
+    pdfFile: hasPdf ? `/api/skills/${s._id}/pdf` : null,
+    videoFile: hasVideo ? `/api/skills/${s._id}/video` : null
+  };
 }
 
 // ==========================================
@@ -256,7 +285,10 @@ app.get(['/api/users/profile', '/users/profile'], ensureDbConnected, protect, as
   try {
     const user = await User.findById(req.user._id).select('-password');
     const mySkills = await Skill.find({ user: req.user._id }).sort({ createdAt: -1 });
-    res.json({ user, mySkills });
+    res.json({
+      user,
+      mySkills: mySkills.map(formatSkillResponse)
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -321,7 +353,200 @@ app.get(['/api/skills', '/skills'], ensureDbConnected, async (req, res) => {
       .populate('user', 'name avatar credits')
       .sort({ createdAt: -1 });
 
-    res.json(skills);
+    res.json(skills.map(formatSkillResponse));
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Single Skill Detail
+app.get(['/api/skills/:id', '/skills/:id'], ensureDbConnected, async (req, res) => {
+  try {
+    const skill = await Skill.findById(req.params.id).populate('user', 'name avatar credits');
+    if (!skill) return res.status(404).json({ message: 'Skill not found' });
+    res.json(formatSkillResponse(skill));
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Stream or Download Skill PDF
+app.get(['/api/skills/:id/pdf', '/skills/:id/pdf'], ensureDbConnected, async (req, res) => {
+  try {
+    const skill = await Skill.findById(req.params.id);
+    if (!skill || !skill.pdfFile) {
+      return res.status(404).json({ message: 'PDF document not found for this skill' });
+    }
+
+    const safeTitle = (skill.title || 'skill-syllabus')
+      .replace(/[^a-zA-Z0-9_\-]/g, '_')
+      .replace(/_+/g, '_')
+      .substring(0, 60);
+    const filename = `${safeTitle}.pdf`;
+    const isDownload = req.query.download === '1' || req.query.download === 'true';
+    const disposition = isDownload ? 'attachment' : 'inline';
+
+    // 1. Data URI format (base64)
+    if (skill.pdfFile.startsWith('data:')) {
+      const match = skill.pdfFile.match(/^data:([^;]+);base64,(.+)$/s);
+      if (!match) {
+        return res.status(500).json({ message: 'Corrupted PDF data URI in database' });
+      }
+      const mime = match[1] || 'application/pdf';
+      const buffer = Buffer.from(match[2], 'base64');
+
+      res.setHeader('Content-Type', mime);
+      res.setHeader('Content-Disposition', `${disposition}; filename="${filename}"`);
+      res.setHeader('Content-Length', buffer.length);
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      return res.end(buffer);
+    }
+
+    // 2. Relative file upload path (e.g., /uploads/xyz.pdf)
+    if (skill.pdfFile.startsWith('/uploads/') || skill.pdfFile.startsWith('uploads/')) {
+      const cleanPath = skill.pdfFile.replace(/^\//, '');
+      const filePath = path.join(__dirname, 'public', cleanPath);
+      if (fs.existsSync(filePath)) {
+        res.setHeader('Content-Disposition', `${disposition}; filename="${filename}"`);
+        return res.sendFile(filePath);
+      }
+      return res.status(404).json({ message: 'PDF file not found on server disk' });
+    }
+
+    // 3. Remote URL
+    if (skill.pdfFile.startsWith('http://') || skill.pdfFile.startsWith('https://')) {
+      return res.redirect(skill.pdfFile);
+    }
+
+    return res.status(404).json({ message: 'Unknown PDF storage format' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Stream or Download Skill Demo Video with HTTP Range Support
+app.get(['/api/skills/:id/video', '/skills/:id/video'], ensureDbConnected, async (req, res) => {
+  try {
+    const skill = await Skill.findById(req.params.id);
+    if (!skill || !skill.videoFile) {
+      return res.status(404).json({ message: 'Video demo not found for this skill' });
+    }
+
+    const safeTitle = (skill.title || 'skill-demo')
+      .replace(/[^a-zA-Z0-9_\-]/g, '_')
+      .replace(/_+/g, '_')
+      .substring(0, 60);
+    const isDownload = req.query.download === '1' || req.query.download === 'true';
+
+    // 1. Data URI format (base64)
+    if (skill.videoFile.startsWith('data:')) {
+      const match = skill.videoFile.match(/^data:([^;]+);base64,(.+)$/s);
+      if (!match) {
+        return res.status(500).json({ message: 'Corrupted video data URI in database' });
+      }
+      const mime = match[1] || 'video/mp4';
+      const ext = mime.includes('webm') ? 'webm' : 'mp4';
+      const filename = `${safeTitle}.${ext}`;
+      const buffer = Buffer.from(match[2], 'base64');
+      const totalSize = buffer.length;
+
+      if (isDownload) {
+        res.setHeader('Content-Type', mime);
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.setHeader('Content-Length', totalSize);
+        return res.end(buffer);
+      }
+
+      // Stream with HTTP Range Requests for video seeking & buffer control
+      const range = req.headers.range;
+      if (range) {
+        const parts = range.replace(/bytes=/, '').split('-');
+        const start = parseInt(parts[0], 10);
+        const end = parts[1] ? parseInt(parts[1], 10) : totalSize - 1;
+
+        if (start >= totalSize || end >= totalSize || start > end) {
+          res.status(416).setHeader('Content-Range', `bytes */${totalSize}`);
+          return res.end();
+        }
+
+        const chunkSize = end - start + 1;
+        res.writeHead(206, {
+          'Content-Range': `bytes ${start}-${end}/${totalSize}`,
+          'Accept-Ranges': 'bytes',
+          'Content-Length': chunkSize,
+          'Content-Type': mime,
+          'Cache-Control': 'public, max-age=86400'
+        });
+        return res.end(buffer.subarray(start, end + 1));
+      } else {
+        res.writeHead(200, {
+          'Content-Length': totalSize,
+          'Accept-Ranges': 'bytes',
+          'Content-Type': mime,
+          'Cache-Control': 'public, max-age=86400'
+        });
+        return res.end(buffer);
+      }
+    }
+
+    // 2. Relative file upload path (e.g., /uploads/xyz.mp4)
+    if (skill.videoFile.startsWith('/uploads/') || skill.videoFile.startsWith('uploads/')) {
+      const cleanPath = skill.videoFile.replace(/^\//, '');
+      const filePath = path.join(__dirname, 'public', cleanPath);
+      if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ message: 'Video file not found on server disk' });
+      }
+
+      const stat = fs.statSync(filePath);
+      const totalSize = stat.size;
+      const ext = path.extname(filePath).toLowerCase();
+      const mime = ext === '.webm' ? 'video/webm' : 'video/mp4';
+      const filename = `${safeTitle}${ext}`;
+
+      if (isDownload) {
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        return res.sendFile(filePath);
+      }
+
+      const range = req.headers.range;
+      if (range) {
+        const parts = range.replace(/bytes=/, '').split('-');
+        const start = parseInt(parts[0], 10);
+        const end = parts[1] ? parseInt(parts[1], 10) : totalSize - 1;
+
+        if (start >= totalSize || end >= totalSize || start > end) {
+          res.status(416).setHeader('Content-Range', `bytes */${totalSize}`);
+          return res.end();
+        }
+
+        const chunkSize = end - start + 1;
+        res.writeHead(206, {
+          'Content-Range': `bytes ${start}-${end}/${totalSize}`,
+          'Accept-Ranges': 'bytes',
+          'Content-Length': chunkSize,
+          'Content-Type': mime,
+          'Cache-Control': 'public, max-age=86400'
+        });
+        const fileStream = fs.createReadStream(filePath, { start, end });
+        return fileStream.pipe(res);
+      } else {
+        res.writeHead(200, {
+          'Content-Length': totalSize,
+          'Accept-Ranges': 'bytes',
+          'Content-Type': mime,
+          'Cache-Control': 'public, max-age=86400'
+        });
+        const fileStream = fs.createReadStream(filePath);
+        return fileStream.pipe(res);
+      }
+    }
+
+    // 3. Remote URL
+    if (skill.videoFile.startsWith('http://') || skill.videoFile.startsWith('https://')) {
+      return res.redirect(skill.videoFile);
+    }
+
+    return res.status(404).json({ message: 'Unknown video storage format' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -329,7 +554,12 @@ app.get(['/api/skills', '/skills'], ensureDbConnected, async (req, res) => {
 
 app.post(['/api/skills', '/skills'], ensureDbConnected, protect, (req, res) => {
   skillUpload(req, res, async (err) => {
-    if (err) return res.status(400).json({ message: err.message });
+    if (err) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ message: 'File is too large. Maximum allowed size is 4.5MB per attachment.' });
+      }
+      return res.status(400).json({ message: err.message });
+    }
 
     try {
       const { title, category, description } = req.body;
@@ -350,7 +580,7 @@ app.post(['/api/skills', '/skills'], ensureDbConnected, protect, (req, res) => {
       });
 
       const populatedSkill = await Skill.findById(skill._id).populate('user', 'name avatar credits');
-      res.status(201).json(populatedSkill);
+      res.status(201).json(formatSkillResponse(populatedSkill));
     } catch (error) {
       res.status(500).json({ message: error.message });
     }
@@ -423,7 +653,15 @@ app.get(['/api/bookings/my-bookings', '/bookings/my-bookings'], ensureDbConnecte
       .populate('mentor', 'name email avatar')
       .sort({ createdAt: -1 });
 
-    res.json(bookings);
+    const formattedBookings = bookings.map(b => {
+      const bObj = b.toObject ? b.toObject() : { ...b };
+      if (bObj.skill) {
+        bObj.skill = formatSkillResponse(bObj.skill);
+      }
+      return bObj;
+    });
+
+    res.json(formattedBookings);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
