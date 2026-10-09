@@ -1,205 +1,225 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="bn">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Swappr- Home</title>
-    <link rel="icon" type="image/png" href="logo.png?v=1.0">
+  <link rel="icon" type="image/png" href="logo.png?v=1.0">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@500;600;700&display=swap"
+    rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="/css/style.css">
 </head>
+
 <body>
 
   <!-- Navbar -->
-   <!-- Navbar -->
- <nav class="navbar navbar-expand-lg navbar-dark shadow-sm">
-  <div class="container">
-    <a class="navbar-brand" href="/">
-      <i class="fa-solid fa-repeat text-info me-2"></i>Swa<span>ppr</span>
-    </a>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark shadow-sm">
+    <div class="container">
+      <a class="navbar-brand" href="/">
+        <i class="fa-solid fa-repeat text-info me-2"></i>Swa<span>ppr</span>
+      </a>
 
-    <!-- Dynamic Navbar Buttons -->
-    <div class="ms-auto d-flex gap-2" id="navAuthButtons">
-      <a href="/login.html" id="login-link" class="btn btn-outline-light btn-sm"><i class="fa-solid fa-right-to-bracket me-1"></i> Login</a>
-      <a href="/register.html" id="register-link" class="btn btn-primary btn-sm"><i class="fa-solid fa-user-plus me-1"></i> Register</a>
-      
-      <a href="/dashboard.html" id="dashboard-link" class="btn btn-outline-info btn-sm" style="display: none;"><i class="fa-solid fa-gauge me-1"></i> Dashboard</a>
-      
-      <!-- Updated Profile Link (Image Container + Name) -->
-      <!-- My Profile Button -->
-<a href="/profile.html" id="profile-link" class="btn btn-outline-light btn-sm d-inline-flex align-items-center gap-2" style="display: none;">
-  <span id="profile-avatar-container">
-    <i class="fa-solid fa-user me-1"></i>
-  </span>
-  <span id="profile-name">My Profile</span>
-</a>
-      
-      <a href="/admin.html" id="admin-link" class="btn btn-outline-warning btn-sm"><i class="fa-solid fa-user-shield me-1"></i> Admin</a>
-      <button id="logout-btn" class="btn btn-danger btn-sm" onclick="logout()" style="display: none;"><i class="fa-solid fa-right-from-bracket me-1"></i> Logout</button>
+      <!-- Dynamic Navbar Buttons -->
+      <div class="ms-auto d-flex gap-2" id="navAuthButtons">
+        <a href="/login.html" id="login-link" class="btn btn-outline-light btn-sm"><i
+            class="fa-solid fa-right-to-bracket me-1"></i> Login</a>
+        <a href="/register.html" id="register-link" class="btn btn-primary btn-sm"><i
+            class="fa-solid fa-user-plus me-1"></i> Register</a>
+
+        <a href="/dashboard.html" id="dashboard-link" class="btn btn-outline-info btn-sm" style="display: none;"><i
+            class="fa-solid fa-gauge me-1"></i> Dashboard</a>
+
+        <!-- Updated Profile Link (Image Container + Name) -->
+        <!-- My Profile Button -->
+        <a href="/profile.html" id="profile-link"
+          class="btn btn-outline-light btn-sm align-items-center gap-2" style="display: none;">
+          <span id="profile-avatar-container">
+            <i class="fa-solid fa-user me-1"></i>
+          </span>
+          <span id="profile-name">My Profile</span>
+        </a>
+
+        <a href="/admin.html" id="admin-link" class="btn btn-outline-warning btn-sm" style="display: none;"><i
+            class="fa-solid fa-user-shield me-1"></i> Admin</a>
+        <button id="logout-btn" class="btn btn-danger btn-sm" onclick="logout()" style="display: none;"><i
+            class="fa-solid fa-right-from-bracket me-1"></i> Logout</button>
+      </div>
     </div>
-  </div>
-</nav>
+  </nav>
 
-<script>
-  async function setupNavbar() {
-    const token = localStorage.getItem('token');
+  <script>
+    async function setupNavbar() {
+      const token = localStorage.getItem('token');
 
-    const loginLink = document.getElementById('login-link');
-    const registerLink = document.getElementById('register-link');
-    const dashboardLink = document.getElementById('dashboard-link');
-    const profileLink = document.getElementById('profile-link');
-    const adminLink = document.getElementById('admin-link');
-    const logoutBtn = document.getElementById('logout-btn');
+      const loginLink = document.getElementById('login-link');
+      const registerLink = document.getElementById('register-link');
+      const dashboardLink = document.getElementById('dashboard-link');
+      const profileLink = document.getElementById('profile-link');
+      const adminLink = document.getElementById('admin-link');
+      const logoutBtn = document.getElementById('logout-btn');
 
-    // ১. ব্রাউজারে টোকেন না থাকলে Guest View
-    if (!token) {
-      renderGuestUI();
-      return;
-    }
-
-    // ২. টোকেন থাকলে শুরুতেই UI-তে Logged-In বাটনগুলো সক্রিয় করে দেওয়া
-    renderLoggedInUI();
-
-    // LocalStorage-এ থাকা ডাটা থেকে নাম বসানো
-    const savedUser = JSON.parse(localStorage.getItem('user') || '{}');
-    if (savedUser && savedUser.name && profileLink) {
-      profileLink.innerHTML = `<i class="fa-solid fa-user me-1"></i> ${savedUser.name}`;
-      if (savedUser.role === 'admin' && adminLink) adminLink.style.display = 'inline-block';
-    }
-
-    // ৩. ব্যাকএন্ড থেকে ভ্যালিডেশন চেক করা
-    try {
-      const res = await fetch('/api/auth/me', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (res.ok) {
-        const user = await res.json();
-        localStorage.setItem('user', JSON.stringify(user));
-
-        if (profileLink) {
-          profileLink.innerHTML = `<i class="fa-solid fa-user me-1"></i> ${user.name || 'My Profile'}`;
-        }
-        if (user.role === 'admin' && adminLink) {
-          adminLink.style.display = 'inline-block';
-        }
-      } else if (res.status === 401 || res.status === 403) {
-        // শুধু টোকেন অবৈধ/মেয়াদোত্তীর্ণ (401/403) হলেই কেবল সেশন ক্লিয়ার হবে
-        logout();
+      // ১. ব্রাউজারে টোকেন না থাকলে Guest View
+      if (!token) {
+        renderGuestUI();
+        return;
       }
-    } catch (err) {
-      console.warn('Backend reach test failed, keeping current local session:', err);
-      // ব্যাকএন্ড রিচ করা না গেলেও টোকেন থাকলে ইউজার লগইন অবস্থাতেই থাকবে
+
+      // ২. টোকেন থাকলে শুরুতেই UI-তে Logged-In বাটনগুলো সক্রিয় করে দেওয়া
+      renderLoggedInUI();
+
+      // LocalStorage-এ থাকা ডাটা থেকে নাম বসানো
+      const savedUser = JSON.parse(localStorage.getItem('user') || '{}');
+      if (savedUser && savedUser.name && profileLink) {
+        profileLink.innerHTML = `<i class="fa-solid fa-user me-1"></i> ${savedUser.name}`;
+        if (savedUser.role === 'admin' && adminLink) adminLink.style.display = 'inline-block';
+      }
+
+      // ৩. ব্যাকএন্ড থেকে ভ্যালিডেশন চেক করা
+      try {
+        const res = await fetch('/api/auth/me', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (res.ok) {
+          const user = await res.json();
+          localStorage.setItem('user', JSON.stringify(user));
+
+          if (profileLink) {
+            profileLink.innerHTML = `<i class="fa-solid fa-user me-1"></i> ${user.name || 'My Profile'}`;
+          }
+          if (user.role === 'admin' && adminLink) {
+            adminLink.style.display = 'inline-block';
+          }
+        } else if (res.status === 401 || res.status === 403) {
+          // শুধু টোকেন অবৈধ/মেয়াদোত্তীর্ণ (401/403) হলেই কেবল সেশন ক্লিয়ার হবে
+          logout();
+        }
+      } catch (err) {
+        console.warn('Backend reach test failed, keeping current local session:', err);
+        // ব্যাকএন্ড রিচ করা না গেলেও টোকেন থাকলে ইউজার লগইন অবস্থাতেই থাকবে
+      }
     }
-  }
 
-  function renderGuestUI() {
-    const loginLink = document.getElementById('login-link');
-    const registerLink = document.getElementById('register-link');
-    const dashboardLink = document.getElementById('dashboard-link');
-    const profileLink = document.getElementById('profile-link');
-    const adminLink = document.getElementById('admin-link');
-    const logoutBtn = document.getElementById('logout-btn');
+    function renderGuestUI() {
+      const loginLink = document.getElementById('login-link');
+      const registerLink = document.getElementById('register-link');
+      const dashboardLink = document.getElementById('dashboard-link');
+      const profileLink = document.getElementById('profile-link');
+      const adminLink = document.getElementById('admin-link');
+      const logoutBtn = document.getElementById('logout-btn');
 
-    if (loginLink) loginLink.style.display = 'inline-block';
-    if (registerLink) registerLink.style.display = 'inline-block';
-    if (dashboardLink) dashboardLink.style.display = 'none';
-    if (profileLink) profileLink.style.display = 'none';
-    if (adminLink) adminLink.style.display = 'none';
-    if (logoutBtn) logoutBtn.style.display = 'none';
-  }
+      if (loginLink) loginLink.style.display = 'inline-block';
+      if (registerLink) registerLink.style.display = 'inline-block';
+      if (dashboardLink) dashboardLink.style.display = 'none';
+      if (profileLink) profileLink.style.display = 'none';
+      if (adminLink) adminLink.style.display = 'none';
+      if (logoutBtn) logoutBtn.style.display = 'none';
+    }
 
-  function renderLoggedInUI() {
-    const loginLink = document.getElementById('login-link');
-    const registerLink = document.getElementById('register-link');
-    const dashboardLink = document.getElementById('dashboard-link');
-    const profileLink = document.getElementById('profile-link');
-    const logoutBtn = document.getElementById('logout-btn');
+    function renderLoggedInUI() {
+      const loginLink = document.getElementById('login-link');
+      const registerLink = document.getElementById('register-link');
+      const dashboardLink = document.getElementById('dashboard-link');
+      const profileLink = document.getElementById('profile-link');
+      const logoutBtn = document.getElementById('logout-btn');
 
-    if (loginLink) loginLink.style.display = 'none';
-    if (registerLink) registerLink.style.display = 'none';
-    if (dashboardLink) dashboardLink.style.display = 'inline-block';
-    if (profileLink) profileLink.style.display = 'inline-block';
-    if (logoutBtn) logoutBtn.style.display = 'inline-block';
-  }
+      if (loginLink) loginLink.style.display = 'none';
+      if (registerLink) registerLink.style.display = 'none';
+      if (dashboardLink) dashboardLink.style.display = 'inline-block';
+      if (profileLink) profileLink.style.display = 'inline-flex';
+      if (logoutBtn) logoutBtn.style.display = 'inline-block';
+    }
 
-  function logout() {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    window.location.href = '/login.html';
-  }
+    function logout() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login.html';
+    }
 
-  document.addEventListener('DOMContentLoaded', setupNavbar);
-</script>
+    document.addEventListener('DOMContentLoaded', setupNavbar);
+  </script>
 
   <!-- Hero Section -->
-   <!-- Modern Two-Column Hero Section -->
- <!-- Modern Two-Column Hero Section -->
- <!-- Modern Two-Column Hero Section -->
-<header class="hero-section py-5 text-white" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); position: relative; overflow: hidden;">
-  <div class="container py-4">
-    <div class="row align-items-center g-5">
-      
-      <!-- Left Column: Content -->
-      <div class="col-lg-6 text-start">
-        <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 px-3 py-2 rounded-pill mb-3 fs-6 d-inline-flex align-items-center gap-2">
-          <i class="fa-solid fa-users text-info"></i> Peer-to-Peer Learning
-        </span>
-        <h1 class="display-4 fw-extrabold mb-3 lh-sm">
-          Exchange Skills, <br><span class="text-info">Grow Together.</span>
-        </h1>
-        <p class="lead mb-4 text-secondary" style="color: #94a3b8 !important;">
-          Swappr helps you connect with people nearby to share knowledge. Teach what you know, learn what you want—directly within your community.
-        </p>
-        <div class="d-flex flex-wrap gap-3">
-          <a href="#skillsSection" class="btn btn-info btn-lg px-4 fw-bold shadow-sm">
-            <i class="fa-solid fa-compass me-2"></i>Explore Skills
-          </a>
-          <a href="/register.html" class="btn btn-outline-light btn-lg px-4">
-            <i class="fa-solid fa-user-plus me-2"></i>Get Started
-          </a>
-        </div>
-      </div>
+  <main class="flex-grow-1">
+  <!-- Modern Two-Column Hero Section -->
+  <!-- Modern Two-Column Hero Section -->
+  <!-- Modern Two-Column Hero Section -->
+  <header class="hero-section py-5 text-white"
+    style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); position: relative; overflow: hidden;">
+    <div class="container py-4">
+      <div class="row align-items-center g-5">
 
-      <!-- Right Column: Professional Image Segment with Glow & Floating Badges -->
-      <div class="col-lg-6 position-relative text-center">
-        
-        <!-- Background Soft Radial Glow -->
-        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 300px; height: 300px; background: rgba(13, 202, 240, 0.15); filter: blur(80px); border-radius: 50%; z-index: 0;"></div>
-
-        <!-- Image Container with Subtle Frame -->
-        <div class="position-relative z-1 p-3 rounded-4 shadow-lg" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); backdrop-filter: blur(10px);">
-          <img src="dp.jpg" alt="Skill Swap Community" class="img-fluid" style="max-height: 340px; filter: drop-shadow(0px 10px 20px rgba(0,0,0,0.3));">
-          
-          <!-- Floating Badge Top Right -->
-          <div class="position-absolute top-0 end-0 translate-middle-y me-3 bg-dark text-white p-2 px-3 rounded-3 shadow border border-secondary border-opacity-25 d-none d-sm-flex align-items-center gap-2">
-            <i class="fa-solid fa-certificate text-warning fs-5"></i>
-            <div class="text-start">
-              <span class="d-block fw-bold small">Learn Anything</span>
-              <small class="text-muted" style="font-size: 11px;">100% Free Sharing</small>
-            </div>
+        <!-- Left Column: Content -->
+        <div class="col-lg-6 text-start">
+          <span
+            class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-25 px-3 py-2 rounded-pill mb-3 fs-6 d-inline-flex align-items-center gap-2">
+            <i class="fa-solid fa-users text-info"></i> Peer-to-Peer Learning
+          </span>
+          <h1 class="display-4 fw-extrabold mb-3 lh-sm">
+            Exchange Skills, <br><span class="text-info">Grow Together.</span>
+          </h1>
+          <p class="lead mb-4 text-secondary" style="color: #94a3b8 !important;">
+            Swappr helps you connect with people nearby to share knowledge. Teach what you know, learn what you
+            want—directly within your community.
+          </p>
+          <div class="d-flex flex-wrap gap-3">
+            <a href="#skillsSection" class="btn btn-info btn-lg px-4 fw-bold shadow-sm">
+              <i class="fa-solid fa-compass me-2"></i>Explore Skills
+            </a>
+            <a href="/register.html" class="btn btn-outline-light btn-lg px-4">
+              <i class="fa-solid fa-user-plus me-2"></i>Get Started
+            </a>
           </div>
-
-          <!-- Floating Badge Bottom Left -->
-          <div class="position-absolute bottom-0 start-0 translate-middle-y ms-3 bg-dark text-white p-2 px-3 rounded-3 shadow border border-secondary border-opacity-25 d-none d-sm-flex align-items-center gap-2">
-            <i class="fa-solid fa-handshake text-info fs-5"></i>
-            <div class="text-start">
-              <span class="d-block fw-bold small">Community Driven</span>
-              <small class="text-muted" style="font-size: 11px;">Connect Locally</small>
-            </div>
-          </div>
-
         </div>
 
-      </div>
+        <!-- Right Column: Professional Image Segment with Glow & Floating Badges -->
+        <div class="col-lg-6 position-relative text-center">
 
+          <!-- Background Soft Radial Glow -->
+          <div
+            style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 300px; height: 300px; background: rgba(13, 202, 240, 0.15); filter: blur(80px); border-radius: 50%; z-index: 0;">
+          </div>
+
+          <!-- Image Container with Subtle Frame -->
+          <div class="position-relative z-1 p-3 rounded-4 shadow-lg"
+            style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); backdrop-filter: blur(10px);">
+            <img src="dp.jpg" alt="Skill Swap Community" class="img-fluid"
+              style="max-height: 340px; filter: drop-shadow(0px 10px 20px rgba(0,0,0,0.3));">
+
+            <!-- Floating Badge Top Right -->
+            <div
+              class="position-absolute top-0 end-0 translate-middle-y me-3 bg-dark text-white p-2 px-3 rounded-3 shadow border border-secondary border-opacity-25 d-none d-sm-flex align-items-center gap-2">
+              <i class="fa-solid fa-certificate text-warning fs-5"></i>
+              <div class="text-start">
+                <span class="d-block fw-bold small">Learn Anything</span>
+                <small class="text-muted" style="font-size: 11px;">100% Free Sharing</small>
+              </div>
+            </div>
+
+            <!-- Floating Badge Bottom Left -->
+            <div
+              class="position-absolute bottom-0 start-0 translate-middle-y ms-3 bg-dark text-white p-2 px-3 rounded-3 shadow border border-secondary border-opacity-25 d-none d-sm-flex align-items-center gap-2">
+              <i class="fa-solid fa-handshake text-info fs-5"></i>
+              <div class="text-start">
+                <span class="d-block fw-bold small">Community Driven</span>
+                <small class="text-muted" style="font-size: 11px;">Connect Locally</small>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
     </div>
-  </div>
-</header>
+  </header>
 
   <!-- Feature Highlights -->
   <section class="container my-5">
@@ -208,7 +228,8 @@
         <div class="card p-4 h-100">
           <div class="text-primary mb-3"><i class="fa-solid fa-clock-rotate-left fa-3x"></i></div>
           <h5>Time-Bank System</h5>
-          <p class="text-muted mb-0">Teach for 1 hour to earn 1 credit. Spend that credit to learn anything you want.</p>
+          <p class="text-muted mb-0">Teach for 1 hour to earn 1 credit. Spend that credit to learn anything you want.
+          </p>
         </div>
       </div>
       <div class="col-md-4">
@@ -231,7 +252,7 @@
   <!-- Skill Upload Form & Feed Section -->
   <section class="container my-5" id="skillsSection">
     <div class="row g-4">
-      
+
       <!-- Post New Skill Form Wrapper (Only Visible When Logged In) -->
       <div class="col-lg-5" id="skillFormContainer" style="display: none;">
         <div class="card p-4 shadow-sm border-0">
@@ -254,16 +275,19 @@
 
             <div class="mb-3">
               <label class="form-label fw-semibold">Description</label>
-              <textarea id="skillDesc" class="form-control" rows="3" placeholder="Describe what you will teach..." required></textarea>
+              <textarea id="skillDesc" class="form-control" rows="3" placeholder="Describe what you will teach..."
+                required></textarea>
             </div>
 
             <div class="mb-3">
-              <label class="form-label fw-semibold"><i class="fa-solid fa-file-pdf text-danger me-1"></i> Attach PDF Syllabus / Notes (Optional)</label>
+              <label class="form-label fw-semibold"><i class="fa-solid fa-file-pdf text-danger me-1"></i> Attach PDF
+                Syllabus / Notes (Optional)</label>
               <input type="file" id="skillPdf" accept="application/pdf" class="form-control">
             </div>
 
             <div class="mb-3">
-              <label class="form-label fw-semibold"><i class="fa-solid fa-video text-primary me-1"></i> Attach Demo Video (Optional)</label>
+              <label class="form-label fw-semibold"><i class="fa-solid fa-video text-primary me-1"></i> Attach Demo
+                Video (Optional)</label>
               <input type="file" id="skillVideo" accept="video/mp4,video/webm" class="form-control">
             </div>
 
@@ -287,44 +311,46 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="/js/main.js?v=2.3"></script>
- <!-- Footer Section -->
-<footer class="bg-dark text-light py-4 mt-5 border-top border-secondary border-opacity-25">
-  <div class="container">
-    <div class="row align-items-center g-3">
-      
-      <!-- Brand & Copyright -->
-      <div class="col-md-6 text-center text-md-start">
-        <a class="navbar-brand text-warning fw-bold fs-5 d-inline-block mb-1" href="#">
-          <i class=""></i>Swa<span class="text-white">ppr</span>
-        </a>
-        <p class="text-secondary small mb-0">
-          &copy; 2026 Swappr Skill Exchange Platform. All rights reserved.
-        </p>
-      </div>
+  </main>
+  <!-- Footer Section -->
+  <footer class="w-100 bg-dark text-light py-4 border-top border-secondary border-opacity-25">
+    <div class="container">
+      <div class="row align-items-center g-3">
 
-      <!-- Quick Navigation & Links -->
-      <div class="col-md-6 text-center text-md-end">
-        <ul class="list-inline mb-0 small">
-          <li class="list-inline-item me-3">
-            <a href="/dashboard.html" class="text-secondary text-decoration-none hover-white">
-              <i class="fa-solid fa-gauge me-1"></i> User Dashboard
-            </a>
-          </li>
-          <li class="list-inline-item me-3">
-            <a href="/index.html" class="text-secondary text-decoration-none hover-white">
-              <i class="fa-solid fa-house me-1"></i> Home
-            </a>
-          </li>
-          <li class="list-inline-item">
-            <span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-25">
-              <i class="fa-solid fa-circle me-1" style="font-size: 8px;"></i> System Online
-            </span>
-          </li>
-        </ul>
-      </div>
+        <!-- Brand & Copyright -->
+        <div class="col-md-6 text-center text-md-start">
+          <a class="navbar-brand text-warning fw-bold fs-5 d-inline-block mb-1" href="/">
+            <i class="fa-solid fa-repeat text-info me-2"></i>Swa<span class="text-white">ppr</span>
+          </a>
+          <p class="text-secondary small mb-0">
+            &copy; 2026 Swappr Skill Exchange Platform. All rights reserved.
+          </p>
+        </div>
 
+        <!-- Quick Navigation & Links -->
+        <div class="col-md-6 text-center text-md-end">
+          <ul class="list-inline mb-0 small">
+            <li class="list-inline-item me-3">
+              <a href="/dashboard.html" class="text-secondary text-decoration-none hover-white">
+                <i class="fa-solid fa-gauge me-1"></i> User Dashboard
+              </a>
+            </li>
+            <li class="list-inline-item me-3">
+              <a href="/index.html" class="text-secondary text-decoration-none hover-white">
+                <i class="fa-solid fa-house me-1"></i> Home
+              </a>
+            </li>
+            <li class="list-inline-item">
+              <span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-25">
+                <i class="fa-solid fa-circle me-1" style="font-size: 8px;"></i> System Online
+              </span>
+            </li>
+          </ul>
+        </div>
+
+      </div>
     </div>
-  </div>
-</footer>
+  </footer>
 </body>
+
 </html>

@@ -23,32 +23,74 @@
     </div>
   </nav>
 
-  <div class="container my-5">
-    <h2 class="mb-4"><i class="fa-solid fa-sliders text-primary me-2"></i> System Control Panel</h2>
+  <main class="flex-grow-1">
+    <div class="container my-5">
+      <h2 class="mb-4"><i class="fa-solid fa-sliders text-primary me-2"></i> System Control Panel</h2>
 
-    <div class="row">
-      <div class="col-md-12">
-        <div class="card p-4">
-          <h5>All Users List</h5>
-          <div class="table-responsive mt-3">
-            <table class="table table-hover align-middle">
-              <thead class="table-dark">
-                <tr>
-                  <th>Name</th>
-                  <th>Email</th>
-                  <th>Role</th>
-                  <th>Credits</th>
-                </tr>
-              </thead>
-              <tbody id="usersTable">
-                <!-- Admin Data loaded here -->
-              </tbody>
-            </table>
+      <div class="row">
+        <div class="col-md-12">
+          <div class="card p-4">
+            <h5>All Users List</h5>
+            <div class="table-responsive mt-3">
+              <table class="table table-hover align-middle">
+                <thead class="table-dark">
+                  <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Credits</th>
+                  </tr>
+                </thead>
+                <tbody id="usersTable">
+                  <!-- Admin Data loaded here -->
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
+  </main>
+
+  <!-- Footer Section -->
+  <footer class="w-100 bg-dark text-light py-4 border-top border-secondary border-opacity-25">
+    <div class="container">
+      <div class="row align-items-center g-3">
+        
+        <!-- Brand & Copyright -->
+        <div class="col-md-6 text-center text-md-start">
+          <a class="navbar-brand text-warning fw-bold fs-5 d-inline-block mb-1" href="/">
+            <i class="fa-solid fa-repeat text-info me-2"></i>Swa<span class="text-white">ppr</span>
+          </a>
+          <p class="text-secondary small mb-0">
+            &copy; 2026 Swappr Skill Exchange Platform. All rights reserved.
+          </p>
+        </div>
+
+        <!-- Quick Navigation & Links -->
+        <div class="col-md-6 text-center text-md-end">
+          <ul class="list-inline mb-0 small">
+            <li class="list-inline-item me-3">
+              <a href="/dashboard.html" class="text-secondary text-decoration-none hover-white">
+                <i class="fa-solid fa-gauge me-1"></i> User Dashboard
+              </a>
+            </li>
+            <li class="list-inline-item me-3">
+              <a href="/index.html" class="text-secondary text-decoration-none hover-white">
+                <i class="fa-solid fa-house me-1"></i> Home
+              </a>
+            </li>
+            <li class="list-inline-item">
+              <span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-25">
+                <i class="fa-solid fa-circle me-1" style="font-size: 8px;"></i> System Online
+              </span>
+            </li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+  </footer>
 
   <script>
     async function loadAdminData() {
