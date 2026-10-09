@@ -1,0 +1,84 @@
+ <!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel -Swappr</title>
+   <link rel="icon" type="image/png" href="logo.png?v=1.0">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Poppins:wght@600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+  <nav class="navbar navbar-expand-lg navbar-dark shadow-sm">
+    <div class="container">
+      <a class="navbar-brand text-warning" href="#">
+        <i class="fa-solid fa-user-shield me-2"></i>Swappr<span>Admin</span>
+      </a>
+      <div class="ms-auto">
+        <a href="/dashboard.html" class="btn btn-outline-light btn-sm">User Dashboard</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container my-5">
+    <h2 class="mb-4"><i class="fa-solid fa-sliders text-primary me-2"></i> System Control Panel</h2>
+
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card p-4">
+          <h5>All Users List</h5>
+          <div class="table-responsive mt-3">
+            <table class="table table-hover align-middle">
+              <thead class="table-dark">
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Credits</th>
+                </tr>
+              </thead>
+              <tbody id="usersTable">
+                <!-- Admin Data loaded here -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    async function loadAdminData() {
+      const token = localStorage.getItem('token');
+      try {
+        const res = await fetch('/api/admin/users', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) {
+          alert('Admin access denied!');
+          window.location.href = '/dashboard.html';
+          return;
+        }
+        const users = await res.json();
+        const tbody = document.getElementById('usersTable');
+        tbody.innerHTML = users.map(u => `
+          <tr>
+            <td>${u.name}</td>
+            <td>${u.email}</td>
+            <td><span class="badge ${u.role === 'admin' ? 'bg-danger' : 'bg-secondary'}">${u.role}</span></td>
+            <td><strong class="text-warning">${u.credits}</strong></td>
+          </tr>
+        `).join('');
+      } catch(err) {
+        console.error(err);
+      }
+    }
+
+    loadAdminData();
+  </script>
+  
+</body>
+</html>
