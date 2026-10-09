@@ -96,9 +96,11 @@ async function fetchSkills() {
   container.innerHTML = '<div class="col-12 text-center py-4"><div class="spinner-border text-info" role="status"></div><p class="text-muted mt-2">Loading skills...</p></div>';
 
   try {
-    let res = await fetch('/api/skills');
-    if (!res.ok && res.status === 404) {
-      res = await fetch('/skills');
+    const res = await fetch('/api/skills');
+
+    const contentType = res.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+      throw new Error(`Server returned status ${res.status} non-JSON response`);
     }
 
     if (!res.ok) {
