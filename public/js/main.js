@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:5000'; 
+const API_BASE_URL = ''; 
 
 function logout() {
   localStorage.clear();
@@ -108,8 +108,8 @@ async function fetchSkills() {
     }
 
     container.innerHTML = skills.map(s => {
-      const videoSrc = s.videoFile ? (s.videoFile.startsWith('http') ? s.videoFile : `${API_BASE_URL}${s.videoFile.startsWith('/') ? '' : '/'}${s.videoFile}`) : null;
-      const pdfSrc = s.pdfFile ? (s.pdfFile.startsWith('http') ? s.pdfFile : `${API_BASE_URL}${s.pdfFile.startsWith('/') ? '' : '/'}${s.pdfFile}`) : null;
+      const videoSrc = s.videoFile ? (s.videoFile.startsWith('http') || s.videoFile.startsWith('data:') ? s.videoFile : `${API_BASE_URL}${s.videoFile.startsWith('/') ? '' : '/'}${s.videoFile}`) : null;
+      const pdfSrc = s.pdfFile ? (s.pdfFile.startsWith('http') || s.pdfFile.startsWith('data:') ? s.pdfFile : `${API_BASE_URL}${s.pdfFile.startsWith('/') ? '' : '/'}${s.pdfFile}`) : null;
       const authorName = s.user?.name ? s.user.name : 'Anonymous';
 
       return `
