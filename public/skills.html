@@ -60,18 +60,22 @@
     // ১. API থেকে স্কিল লোড করার ফাংশন
     async function fetchSkills() {
       const container = document.getElementById('skillsGrid');
+      container.innerHTML = `<div class="col-12 text-center py-5"><div class="spinner-border text-primary" role="status"></div><p class="text-muted mt-2">Loading skills...</p></div>`;
       try {
-        const res = await fetch('/api/skills');
+        let res = await fetch('/api/skills');
+        if (!res.ok && res.status === 404) {
+          res = await fetch('/skills');
+        }
         const data = await res.json();
 
         if (res.ok) {
-          allSkills = data;
+          allSkills = Array.isArray(data) ? data : [];
           renderSkills(allSkills);
         } else {
-          container.innerHTML = `<div class="col-12 text-center py-5"><p class="text-danger">Failed to load skills.</p></div>`;
+          container.innerHTML = `<div class="col-12 text-center py-5"><p class="text-danger">Failed to load skills: ${data?.message || res.statusText}</p></div>`;
         }
       } catch (err) {
-        container.innerHTML = `<div class="col-12 text-center py-5"><p class="text-danger">Error connecting to server.</p></div>`;
+        container.innerHTML = `<div class="col-12 text-center py-5"><p class="text-danger">Error connecting to server (${err.message}).</p></div>`;
       }
     }
 

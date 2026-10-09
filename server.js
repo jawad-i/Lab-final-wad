@@ -11,8 +11,9 @@ const jwt = require('jsonwebtoken');
 // Load Environment Variables
 dotenv.config();
 
+const DEFAULT_MONGO_URI = 'mongodb+srv://akibjawadit_db_user:niepIOFoiOPMPzGC@cluster0.mvgf5ks.mongodb.net/skillswap?retryWrites=true&w=majority';
+const MONGO_URI = process.env.MONGO_URI || process.env.MONGODB_URI || DEFAULT_MONGO_URI;
 const JWT_SECRET = process.env.JWT_SECRET || 'skillswap_super_secret_jwt_key_2026';
-const MONGO_URI = process.env.MONGO_URI || process.env.MONGODB_URI;
 
 // Import Mongoose Models (with serverless safe compilation)
 const User = require('./models/User');
@@ -40,14 +41,10 @@ async function connectToDatabase() {
     return cachedDb;
   }
 
-  if (!MONGO_URI) {
-    throw new Error('MONGO_URI is not defined. Please set it in your environment variables.');
-  }
-
   mongoose.set('strictQuery', false);
 
   cachedDb = await mongoose.connect(MONGO_URI, {
-    serverSelectionTimeoutMS: 5000,
+    serverSelectionTimeoutMS: 8000,
     maxPoolSize: 10
   });
 
@@ -55,28 +52,26 @@ async function connectToDatabase() {
   return cachedDb;
 }
 
-// Ensure DB is connected for all API requests
-app.use(async (req, res, next) => {
-  if (req.path.startsWith('/api')) {
-    try {
-      await connectToDatabase();
-    } catch (err) {
-      console.error('Database connection failed:', err.message);
-      return res.status(500).json({
-        message: 'Database connection failed. Please verify MONGO_URI in your environment.',
-        error: err.message
-      });
-    }
+// Middleware to ensure DB connection for all API routes
+const ensureDbConnected = async (req, res, next) => {
+  try {
+    await connectToDatabase();
+    next();
+  } catch (err) {
+    console.error('Database connection failed:', err.message);
+    return res.status(500).json({
+      message: 'Database connection failed. Please ensure MongoDB is reachable.',
+      error: err.message
+    });
   }
-  next();
-});
+};
 
 // ==========================================
 // Multer In-Memory Storage for Serverless
 // ==========================================
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 4.5 * 1024 * 1024 }, // 4.5MB limit to stay within Vercel serverless payload
+  limits: { fileSize: 4.5 * 1024 * 1024 }, // 4.5MB limit
   fileFilter: (req, file, cb) => {
     const allowedTypes = /pdf|mp4|webm|mkv|jpg|jpeg|png|gif|webp/;
     const ext = allowedTypes.test(path.extname(file.originalname).toLowerCase());
@@ -96,7 +91,6 @@ const skillUpload = upload.fields([
 
 const avatarUpload = upload.single('avatar');
 
-// Helper to convert buffer to base64 Data URI
 function bufferToDataURI(file) {
   if (!file || !file.buffer) return null;
   return `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
@@ -118,14 +112,12 @@ const protect = async (req, res, next) => {
   try {
     let user = null;
 
-    // Backward compatibility with legacy mock tokens
     if (token.startsWith('fake-jwt-token-')) {
       const userId = token.replace('fake-jwt-token-', '');
       if (mongoose.Types.ObjectId.isValid(userId)) {
         user = await User.findById(userId).select('-password');
       }
     } else {
-      // Standard JWT verification
       const decoded = jwt.verify(token, JWT_SECRET);
       const userId = decoded.id || decoded._id;
       if (mongoose.Types.ObjectId.isValid(userId)) {
@@ -145,11 +137,26 @@ const protect = async (req, res, next) => {
 };
 
 // ==========================================
-// Auth API Routes
+// API Router Definition
 // ==========================================
+const apiRouter = express.Router();
 
-// Register
-app.post('/api/auth/register', async (req, res) => {
+// Apply DB connection check to all API endpoints
+apiRouter.use(ensureDbConnected);
+
+// Health check endpoint
+apiRouter.get('/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    dbState: mongoose.connection.readyState,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// ------------------------------------------
+// Auth Endpoints
+// ------------------------------------------
+apiRouter.post('/auth/register', async (req, res) => {
   try {
     const { name, email, password } = req.body;
     if (!name || !email || !password) {
@@ -194,8 +201,7 @@ app.post('/api/auth/register', async (req, res) => {
   }
 });
 
-// Login
-app.post('/api/auth/login', async (req, res) => {
+apiRouter.post('/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
     if (!email || !password) {
@@ -208,7 +214,6 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
-    // Support both bcrypt-hashed passwords and legacy plain text passwords
     let isMatch = false;
     if (user.password.startsWith('$2a$') || user.password.startsWith('$2b$')) {
       isMatch = await bcrypt.compare(password, user.password);
@@ -244,8 +249,7 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
-// Current User Validation (Used by index.html and other pages)
-app.get('/api/auth/me', protect, async (req, res) => {
+apiRouter.get('/auth/me', protect, async (req, res) => {
   try {
     res.json(req.user);
   } catch (error) {
@@ -253,12 +257,10 @@ app.get('/api/auth/me', protect, async (req, res) => {
   }
 });
 
-// ==========================================
-// User Profile Routes
-// ==========================================
-
-// Get profile and own skills
-app.get('/api/users/profile', protect, async (req, res) => {
+// ------------------------------------------
+// User Profile Endpoints
+// ------------------------------------------
+apiRouter.get('/users/profile', protect, async (req, res) => {
   try {
     const user = await User.findById(req.user._id).select('-password');
     const mySkills = await Skill.find({ user: req.user._id }).sort({ createdAt: -1 });
@@ -268,8 +270,7 @@ app.get('/api/users/profile', protect, async (req, res) => {
   }
 });
 
-// Update profile avatar
-app.put('/api/users/profile', protect, (req, res) => {
+apiRouter.put('/users/profile', protect, (req, res) => {
   avatarUpload(req, res, async (err) => {
     if (err) return res.status(400).json({ message: err.message });
 
@@ -292,8 +293,7 @@ app.put('/api/users/profile', protect, (req, res) => {
   });
 });
 
-// Delete user profile and all their skills
-app.delete('/api/users/profile', protect, async (req, res) => {
+apiRouter.delete('/users/profile', protect, async (req, res) => {
   try {
     const userId = req.user._id;
     await Skill.deleteMany({ user: userId });
@@ -305,12 +305,10 @@ app.delete('/api/users/profile', protect, async (req, res) => {
   }
 });
 
-// ==========================================
-// Skills API Routes
-// ==========================================
-
-// Get all skills with search and category filters
-app.get('/api/skills', async (req, res) => {
+// ------------------------------------------
+// Skills Endpoints
+// ------------------------------------------
+apiRouter.get('/skills', async (req, res) => {
   try {
     const { category, search } = req.query;
     let query = {};
@@ -336,8 +334,7 @@ app.get('/api/skills', async (req, res) => {
   }
 });
 
-// Create a new skill offer
-app.post('/api/skills', protect, (req, res) => {
+apiRouter.post('/skills', protect, (req, res) => {
   skillUpload(req, res, async (err) => {
     if (err) return res.status(400).json({ message: err.message });
 
@@ -367,8 +364,7 @@ app.post('/api/skills', protect, (req, res) => {
   });
 });
 
-// Delete skill
-app.delete('/api/skills/:id', protect, async (req, res) => {
+apiRouter.delete('/skills/:id', protect, async (req, res) => {
   try {
     const skill = await Skill.findById(req.params.id);
     if (!skill) return res.status(404).json({ message: 'Skill not found' });
@@ -384,12 +380,10 @@ app.delete('/api/skills/:id', protect, async (req, res) => {
   }
 });
 
-// ==========================================
-// Bookings API Routes (Time-Bank Logic)
-// ==========================================
-
-// Create booking session
-app.post('/api/bookings', protect, async (req, res) => {
+// ------------------------------------------
+// Bookings Endpoints
+// ------------------------------------------
+apiRouter.post('/bookings', protect, async (req, res) => {
   try {
     const { skillId } = req.body;
     let { mentorId } = req.body;
@@ -428,8 +422,7 @@ app.post('/api/bookings', protect, async (req, res) => {
   }
 });
 
-// Get user's bookings
-app.get('/api/bookings/my-bookings', protect, async (req, res) => {
+apiRouter.get('/bookings/my-bookings', protect, async (req, res) => {
   try {
     const bookings = await Booking.find({
       $or: [{ learner: req.user._id }, { mentor: req.user._id }]
@@ -445,8 +438,7 @@ app.get('/api/bookings/my-bookings', protect, async (req, res) => {
   }
 });
 
-// Complete booking session and transfer credit
-app.patch('/api/bookings/:id/complete', protect, async (req, res) => {
+apiRouter.patch('/bookings/:id/complete', protect, async (req, res) => {
   try {
     const booking = await Booking.findById(req.params.id);
     if (!booking) return res.status(404).json({ message: 'Booking not found' });
@@ -472,12 +464,10 @@ app.patch('/api/bookings/:id/complete', protect, async (req, res) => {
   }
 });
 
-// ==========================================
-// Admin API Routes
-// ==========================================
-
-// Get all users
-app.get('/api/admin/users', protect, async (req, res) => {
+// ------------------------------------------
+// Admin Endpoints
+// ------------------------------------------
+apiRouter.get('/admin/users', protect, async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Access denied. Admins only.' });
@@ -490,8 +480,7 @@ app.get('/api/admin/users', protect, async (req, res) => {
   }
 });
 
-// Admin delete user
-app.delete('/api/admin/users/:id', protect, async (req, res) => {
+apiRouter.delete('/admin/users/:id', protect, async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Access denied. Admins only.' });
@@ -508,14 +497,14 @@ app.delete('/api/admin/users/:id', protect, async (req, res) => {
 });
 
 // ==========================================
-// 404 Handler for Unmatched API Routes
+// Mount API Router for BOTH /api and root /
 // ==========================================
-app.use('/api', (req, res) => {
-  res.status(404).json({ message: 'API route not found' });
-});
+// This guarantees that whether Vercel strips /api or keeps /api, all requests succeed!
+app.use('/api', apiRouter);
+app.use(apiRouter);
 
 // ==========================================
-// Static HTML Page Serving (For Local Development)
+// Static HTML Page Serving & Clean URLs
 // ==========================================
 app.get('/:page', (req, res, next) => {
   const filePath = path.join(__dirname, 'public', `${req.params.page}.html`);
@@ -529,7 +518,11 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// Fallback for non-API requests
 app.use((req, res) => {
+  if (req.path.startsWith('/api')) {
+    return res.status(404).json({ message: 'API route not found' });
+  }
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 

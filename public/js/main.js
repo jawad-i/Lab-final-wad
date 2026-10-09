@@ -93,11 +93,17 @@ async function fetchSkills() {
   const container = document.getElementById('skillsContainer');
   if (!container) return;
 
+  container.innerHTML = '<div class="col-12 text-center py-4"><div class="spinner-border text-info" role="status"></div><p class="text-muted mt-2">Loading skills...</p></div>';
+
   try {
-    const res = await fetch(`${API_BASE_URL}/api/skills`);
-    
+    let res = await fetch('/api/skills');
+    if (!res.ok && res.status === 404) {
+      res = await fetch('/skills');
+    }
+
     if (!res.ok) {
-      throw new Error(`Server status: ${res.status}`);
+      const errData = await res.json().catch(() => null);
+      throw new Error(errData?.message || `Server status: ${res.status}`);
     }
 
     const skills = await res.json();
@@ -146,6 +152,6 @@ async function fetchSkills() {
     }).join('');
   } catch (err) {
     console.error('Fetch Error:', err);
-    container.innerHTML = '<div class="col-12"><p class="text-danger">Failed to load skills. Make sure your server is running.</p></div>';
+    container.innerHTML = `<div class="col-12"><p class="text-danger">Failed to load skills (${err.message || 'Server error'}). Make sure your server is running.</p></div>`;
   }
 }
