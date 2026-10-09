@@ -375,5 +375,7 @@ This project satisfies all requirements specified in the **Web Application Devel
 
 - **Project Name**: Swappr — Peer-to-Peer Skill Exchange Platform
 - **Course**: Web Application Development Lab (Final Assessment)
+- **Course Code**: ICT-3204
+- **Student ID**: IT-23020
 - **GitHub Repository**: [https://github.com/jawad-i/Lab-final-wad](https://github.com/jawad-i/Lab-final-wad)
 - **License**: [ISC License](LICENSE)
