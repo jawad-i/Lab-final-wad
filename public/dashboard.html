@@ -127,7 +127,7 @@
               </div>
               <h4 class="fw-bold mb-0">Offer a New Skill</h4>
             </div>
-            <p class="text-muted small mb-4">Post what you can teach to earn Skill Credits when you complete sessions.</p>
+            <p class="text-muted small mb-4"><span class="badge bg-success-subtle text-success border border-success-subtle me-1"><i class="fa-solid fa-gift me-1"></i>Earn +1 Credit</span> Post what you can teach to earn +1 Skill Credit instantly, plus earn more when learners book sessions with you.</p>
 
             <div id="formAlertBox"></div>
 
@@ -169,7 +169,7 @@
               </div>
 
               <button type="submit" id="btnSubmitSkill" class="btn btn-primary w-100 fw-bold py-2 shadow-sm">
-                <i class="fa-solid fa-paper-plane me-1"></i> Publish Skill Offer
+                <i class="fa-solid fa-paper-plane me-1"></i> Publish Skill Offer (+1 Credit)
               </button>
             </form>
           </div>
@@ -294,8 +294,16 @@
 
           if (user) {
             document.getElementById('welcomeMsg').innerText = `Welcome back, ${user.name}!`;
-            document.getElementById('statCredits').innerText = user.credits ?? 10;
-            document.getElementById('navCreditBalance').innerText = `${user.credits ?? 10} Credits`;
+            const currentStat = parseInt(document.getElementById('statCredits').innerText, 10);
+            const userCredits = typeof user.credits === 'number' ? user.credits : 10;
+
+            if (!isNaN(currentStat) && currentStat !== userCredits) {
+              window.updateCreditsSmoothly(userCredits, { silent: true });
+            } else {
+              document.getElementById('statCredits').innerText = userCredits;
+              document.getElementById('navCreditBalance').innerText = `${userCredits} Credits`;
+            }
+
             document.getElementById('statSkills').innerText = mySkills.length;
           }
         }
@@ -441,6 +449,12 @@
         });
         const data = await res.json();
         if (res.ok) {
+          if (typeof data.mentorCredits === 'number') {
+            window.updateCreditsSmoothly(data.mentorCredits, {
+              message: '⭐ Session completed! +1 Skill Credit awarded to your balance!',
+              type: 'success'
+            });
+          }
           showAlert('Session completed! 1 Skill Credit added to your balance.', 'success', 'formAlertBox');
           loadDashboardData();
         } else {
@@ -490,7 +504,16 @@
         });
 
         if (res.ok) {
-          showAlert('Skill added successfully! It is now visible in the catalog.', 'success', 'formAlertBox');
+          const data = await res.json().catch(() => ({}));
+          const currentCredit = parseInt(document.getElementById('statCredits').innerText, 10) || 10;
+          const targetCredit = typeof data.userCredits === 'number' ? data.userCredits : (currentCredit + 1);
+
+          window.updateCreditsSmoothly(targetCredit, {
+            message: '🎉 Skill published! +1 Skill Credit added to your balance!',
+            type: 'success'
+          });
+
+          showAlert('Skill added successfully! +1 Credit added to your balance.', 'success', 'formAlertBox');
           document.getElementById('addSkillForm').reset();
           loadDashboardData();
         } else {

@@ -579,8 +579,21 @@ app.post(['/api/skills', '/skills'], ensureDbConnected, protect, (req, res) => {
         user: req.user._id
       });
 
+      // Increase user credits smoothly by 1 for offering/contributing a skill
+      const updatedUser = await User.findByIdAndUpdate(
+        req.user._id,
+        { $inc: { credits: 1 } },
+        { new: true }
+      ).select('-password');
+
       const populatedSkill = await Skill.findById(skill._id).populate('user', 'name avatar credits');
-      res.status(201).json(formatSkillResponse(populatedSkill));
+      const formattedSkill = formatSkillResponse(populatedSkill);
+      res.status(201).json({
+        ...formattedSkill,
+        userCredits: updatedUser.credits,
+        creditsAwarded: 1,
+        message: 'Skill offer published successfully! +1 Skill Credit awarded.'
+      });
     } catch (error) {
       res.status(500).json({ message: error.message });
     }
@@ -592,12 +605,32 @@ app.delete(['/api/skills/:id', '/skills/:id'], ensureDbConnected, protect, async
     const skill = await Skill.findById(req.params.id);
     if (!skill) return res.status(404).json({ message: 'Skill not found' });
 
-    if (skill.user.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+    if (skill.user && skill.user.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Not authorized to delete this skill' });
     }
 
     await Skill.findByIdAndDelete(req.params.id);
-    res.json({ message: 'Skill deleted successfully' });
+
+    // Deduct 1 credit for deleting a skill, ensuring credits do not drop below 0
+    let updatedCredits = req.user.credits;
+    if (skill.user) {
+      const updatedUser = await User.findOneAndUpdate(
+        { _id: skill.user, credits: { $gt: 0 } },
+        { $inc: { credits: -1 } },
+        { new: true }
+      );
+      if (updatedUser) {
+        updatedCredits = updatedUser.credits;
+      } else {
+        const u = await User.findById(skill.user);
+        updatedCredits = u ? Math.max(0, u.credits) : 0;
+      }
+    }
+
+    res.json({
+      message: 'Skill deleted successfully. 1 Skill Credit deducted.',
+      userCredits: updatedCredits
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -681,13 +714,26 @@ app.patch(['/api/bookings/:id/complete', '/bookings/:id/complete'], ensureDbConn
       return res.status(400).json({ message: 'Learner has insufficient credits' });
     }
 
-    await User.findByIdAndUpdate(booking.learner, { $inc: { credits: -1 } });
-    await User.findByIdAndUpdate(booking.mentor, { $inc: { credits: 1 } });
+    const updatedLearner = await User.findOneAndUpdate(
+      { _id: booking.learner, credits: { $gt: 0 } },
+      { $inc: { credits: -1 } },
+      { new: true }
+    );
+    const updatedMentor = await User.findByIdAndUpdate(
+      booking.mentor,
+      { $inc: { credits: 1 } },
+      { new: true }
+    );
 
     booking.status = 'Completed';
     await booking.save();
 
-    res.json({ message: 'Session completed! 1 Skill Credit transferred.', booking });
+    res.json({
+      message: 'Session completed! 1 Skill Credit transferred.',
+      booking,
+      mentorCredits: updatedMentor ? updatedMentor.credits : null,
+      learnerCredits: updatedLearner ? updatedLearner.credits : 0
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

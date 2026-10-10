@@ -80,8 +80,17 @@ async function initNavbar() {
 
       if (res.ok) {
         const freshUser = await res.json();
+        const prevCredits = typeof user.credits === 'number' ? user.credits : 10;
+        const newCredits = typeof freshUser.credits === 'number' ? freshUser.credits : 10;
+
         localStorage.setItem('user', JSON.stringify(freshUser));
-        creditEls.forEach(el => el.innerText = `${freshUser.credits ?? 10} Credits`);
+
+        if (prevCredits !== newCredits) {
+          window.updateCreditsSmoothly(newCredits, { silent: true });
+        } else {
+          creditEls.forEach(el => el.innerText = `${newCredits} Credits`);
+        }
+
         nameEls.forEach(el => el.innerText = freshUser.name || 'My Profile');
 
         if (freshUser.role === 'admin') {
@@ -102,6 +111,164 @@ async function initNavbar() {
 }
 
 /**
+ * =========================================================
+ * Universal Smooth Credit Transition Controller
+ * Smoothly animates credit increases and decreases across the entire UI
+ * =========================================================
+ */
+function animateCreditNumber(element, endVal, duration, formatFn, isIncrease, isDecrease) {
+  if (!element) return;
+  const currentText = element.innerText || '0';
+  const startNum = parseInt(currentText.replace(/[^0-9\-]/g, ''), 10) || 0;
+
+  if (startNum === endVal) {
+    element.innerText = formatFn(endVal);
+    return;
+  }
+
+  if (isIncrease) element.classList.add('credit-number-glow-up');
+  if (isDecrease) element.classList.add('credit-number-glow-down');
+
+  const startTime = performance.now();
+
+  function step(currentTime) {
+    const elapsed = currentTime - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    // Smooth cubic ease out
+    const easeProgress = 1 - Math.pow(1 - progress, 3);
+    const currentVal = Math.round(startNum + (endVal - startNum) * easeProgress);
+
+    element.innerText = formatFn(currentVal);
+
+    if (progress < 1) {
+      requestAnimationFrame(step);
+    } else {
+      element.innerText = formatFn(endVal);
+      setTimeout(() => {
+        element.classList.remove('credit-number-glow-up', 'credit-number-glow-down');
+      }, 400);
+    }
+  }
+
+  requestAnimationFrame(step);
+}
+
+function triggerCreditPill(container, diff) {
+  if (!container || diff === 0) return;
+  const style = window.getComputedStyle(container);
+  if (style.position === 'static') {
+    container.style.position = 'relative';
+  }
+
+  const existing = container.querySelector('.credit-float-pill');
+  if (existing) existing.remove();
+
+  const pill = document.createElement('span');
+  pill.className = `credit-float-pill ${diff > 0 ? 'float-up' : 'float-down'}`;
+  pill.innerHTML = diff > 0
+    ? `<i class="fa-solid fa-arrow-trend-up me-1"></i>+${diff} Credit`
+    : `<i class="fa-solid fa-arrow-trend-down me-1"></i>${diff} Credit`;
+
+  container.appendChild(pill);
+  setTimeout(() => pill.remove(), 1450);
+}
+
+function showCreditToast(message, type = 'success') {
+  let container = document.getElementById('creditToastContainer');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'creditToastContainer';
+    container.className = 'credit-toast-container';
+    document.body.appendChild(container);
+  }
+
+  const toast = document.createElement('div');
+  toast.className = `credit-toast toast-${type}`;
+  const icon = type === 'success'
+    ? 'fa-solid fa-bolt text-warning'
+    : type === 'warning'
+    ? 'fa-solid fa-circle-exclamation text-warning'
+    : 'fa-solid fa-circle-info text-info';
+
+  toast.innerHTML = `
+    <i class="${icon} fs-5"></i>
+    <div class="flex-grow-1">${message}</div>
+    <button type="button" class="btn-close btn-close-white btn-sm" aria-label="Close"></button>
+  `;
+
+  const closeBtn = toast.querySelector('.btn-close');
+  closeBtn.addEventListener('click', () => removeToast(toast));
+
+  container.appendChild(toast);
+  const autoDismiss = setTimeout(() => removeToast(toast), 4500);
+
+  function removeToast(el) {
+    clearTimeout(autoDismiss);
+    el.style.animation = 'toastSlideOut 0.3s ease forwards';
+    setTimeout(() => el.remove(), 300);
+  }
+}
+
+window.updateCreditsSmoothly = function(targetCredits, options = {}) {
+  if (typeof targetCredits !== 'number' || isNaN(targetCredits)) return;
+
+  let user = null;
+  try {
+    const raw = localStorage.getItem('user');
+    if (raw) user = JSON.parse(raw);
+  } catch (e) {
+    console.warn('Error reading user:', e);
+  }
+
+  const prevCredits = (user && typeof user.credits === 'number') ? user.credits : null;
+
+  if (user) {
+    user.credits = targetCredits;
+    localStorage.setItem('user', JSON.stringify(user));
+  }
+
+  const diff = prevCredits !== null ? (targetCredits - prevCredits) : 0;
+  const isIncrease = diff > 0;
+  const isDecrease = diff < 0;
+  const animDuration = 750;
+
+  // Nav badges
+  const navBalanceEls = document.querySelectorAll('#navCreditBalance, .credit-display');
+  navBalanceEls.forEach(el => {
+    animateCreditNumber(el, targetCredits, animDuration, val => `${val} Credits`, isIncrease, isDecrease);
+    triggerCreditPill(el.closest('.credit-badge') || el, diff);
+  });
+
+  // Dashboard & profile numeric counters
+  const statCreditsEls = document.querySelectorAll('#statCredits, #userCreditsCount');
+  statCreditsEls.forEach(el => {
+    animateCreditNumber(el, targetCredits, animDuration, val => `${val}`, isIncrease, isDecrease);
+    triggerCreditPill(el.closest('.stat-card') || el.parentElement || el, diff);
+  });
+
+  // Pulse animation on badge wrappers
+  if (isIncrease || isDecrease) {
+    const badges = document.querySelectorAll('.credit-badge, .stat-card');
+    badges.forEach(badge => {
+      badge.classList.remove('credit-pulse-up', 'credit-pulse-down');
+      void badge.offsetWidth; // trigger reflow
+      badge.classList.add(isIncrease ? 'credit-pulse-up' : 'credit-pulse-down');
+      setTimeout(() => badge.classList.remove('credit-pulse-up', 'credit-pulse-down'), 900);
+    });
+  }
+
+  // Toasts
+  if (options.message) {
+    showCreditToast(options.message, options.type || (isIncrease ? 'success' : isDecrease ? 'warning' : 'info'));
+  } else if (!options.silent && (isIncrease || isDecrease)) {
+    const msg = isIncrease
+      ? `⚡ +${diff} Skill Credit${diff > 1 ? 's' : ''} added! (Balance: ${targetCredits})`
+      : `⚡ ${diff} Skill Credit${Math.abs(diff) > 1 ? 's' : ''} deducted. (Balance: ${targetCredits})`;
+    showCreditToast(msg, isIncrease ? 'success' : 'warning');
+  }
+};
+
+/**
  * Toast / Alert Notification Helper
  */
 function showAlert(message, type = 'success', containerId = null) {
@@ -118,7 +285,7 @@ function showAlert(message, type = 'success', containerId = null) {
       if (target) target.innerHTML = '';
     }, 5000);
   } else {
-    alert(message);
+    showCreditToast(message, type);
   }
 }
 
@@ -212,7 +379,15 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         if (res.ok) {
-          showAlert('Skill posted successfully!', 'success');
+          const data = await res.json().catch(() => ({}));
+          const currentCredit = (user && typeof user.credits === 'number') ? user.credits : 10;
+          const newCredit = typeof data.userCredits === 'number' ? data.userCredits : (currentCredit + 1);
+
+          window.updateCreditsSmoothly(newCredit, {
+            message: '🎉 Skill published! +1 Skill Credit added to your balance!',
+            type: 'success'
+          });
+
           indexSkillForm.reset();
           fetchIndexSkills();
         } else {

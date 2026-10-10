@@ -176,4 +176,192 @@ footer {
 .stat-card:hover {
     transform: translateY(-2px);
 }
+
+/* ==========================================
+   Smooth Credit Transitions & Animations
+   ========================================== */
+.credit-badge {
+    position: relative;
+    overflow: visible;
+    transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.35s ease, background 0.35s ease;
+}
+
+/* Pulse when credits increase */
+.credit-pulse-up {
+    animation: creditPulseUpAnim 0.85s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes creditPulseUpAnim {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.8);
+    }
+    40% {
+        transform: scale(1.18);
+        box-shadow: 0 0 25px 5px rgba(16, 185, 129, 0.7);
+        filter: brightness(1.15);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+        filter: brightness(1);
+    }
+}
+
+/* Pulse when credits decrease */
+.credit-pulse-down {
+    animation: creditPulseDownAnim 0.85s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes creditPulseDownAnim {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.8);
+    }
+    40% {
+        transform: scale(0.92);
+        box-shadow: 0 0 20px 4px rgba(239, 68, 68, 0.7);
+        filter: brightness(0.95);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+        filter: brightness(1);
+    }
+}
+
+/* Floating animation pill: +1 Credit or -1 Credit */
+.credit-float-pill {
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 999px;
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 1050;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+}
+
+.credit-float-pill.float-up {
+    background: #10b981;
+    color: #ffffff;
+    animation: floatUpAnim 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.credit-float-pill.float-down {
+    background: #ef4444;
+    color: #ffffff;
+    animation: floatDownAnim 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes floatUpAnim {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, 0) scale(0.7);
+    }
+    20% {
+        opacity: 1;
+        transform: translate(-50%, -18px) scale(1.15);
+    }
+    75% {
+        opacity: 1;
+        transform: translate(-50%, -32px) scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -44px) scale(0.9);
+    }
+}
+
+@keyframes floatDownAnim {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, 0) scale(0.7);
+    }
+    20% {
+        opacity: 1;
+        transform: translate(-50%, 14px) scale(1.1);
+    }
+    75% {
+        opacity: 1;
+        transform: translate(-50%, 28px) scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-50%, 40px) scale(0.9);
+    }
+}
+
+/* Flash highlight on text/numbers */
+.credit-number-glow-up {
+    color: #10b981 !important;
+    text-shadow: 0 0 12px rgba(16, 185, 129, 0.6);
+    transition: color 0.4s ease, text-shadow 0.4s ease;
+}
+
+.credit-number-glow-down {
+    color: #ef4444 !important;
+    text-shadow: 0 0 12px rgba(239, 68, 68, 0.6);
+    transition: color 0.4s ease, text-shadow 0.4s ease;
+}
+
+/* Toast container for credit alerts */
+.credit-toast-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 1090;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+}
+
+.credit-toast {
+    pointer-events: auto;
+    background: #0f172a;
+    color: #ffffff;
+    padding: 12px 18px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+    border-left: 4px solid #f59e0b;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    opacity: 0;
+    transform: translateY(20px);
+    animation: toastSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.credit-toast.toast-success {
+    border-left-color: #10b981;
+}
+
+.credit-toast.toast-warning {
+    border-left-color: #f59e0b;
+}
+
+.credit-toast.toast-danger {
+    border-left-color: #ef4444;
+}
+
+@keyframes toastSlideIn {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes toastSlideOut {
+    to {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+}
 

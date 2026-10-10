@@ -56,14 +56,27 @@ router.patch('/:id/complete', protect, async (req, res) => {
       return res.status(400).json({ message: 'Learner has insufficient credits' });
     }
 
-    // ক্রেডিট লেনদেন: লার্নারের -১, মেন্টরের +১
-    await User.findByIdAndUpdate(booking.learner, { $inc: { credits: -1 } });
-    await User.findByIdAndUpdate(booking.mentor, { $inc: { credits: 1 } });
+    // ক্রেডিট লেনদেন: লার্নারের -১ (সর্বনিম্ন ০), মেন্টরের +১
+    const updatedLearner = await User.findOneAndUpdate(
+      { _id: booking.learner, credits: { $gt: 0 } },
+      { $inc: { credits: -1 } },
+      { new: true }
+    );
+    const updatedMentor = await User.findByIdAndUpdate(
+      booking.mentor,
+      { $inc: { credits: 1 } },
+      { new: true }
+    );
 
     booking.status = 'Completed';
     await booking.save();
 
-    res.json({ message: 'Session completed! 1 Skill Credit transferred.', booking });
+    res.json({
+      message: 'Session completed! 1 Skill Credit transferred.',
+      booking,
+      mentorCredits: updatedMentor ? updatedMentor.credits : null,
+      learnerCredits: updatedLearner ? updatedLearner.credits : 0
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
