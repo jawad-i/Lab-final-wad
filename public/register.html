@@ -121,8 +121,10 @@
           if (data.token && data.user) {
             localStorage.setItem('token', data.token);
             localStorage.setItem('user', JSON.stringify(data.user));
+            localStorage.setItem('swappr_new_registration', 'true');
             setTimeout(() => window.location.href = '/dashboard.html', 800);
           } else {
+            localStorage.setItem('swappr_new_registration', 'true');
             setTimeout(() => window.location.href = '/login.html', 1200);
           }
         } else {

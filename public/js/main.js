@@ -312,6 +312,28 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
+  // Onboarding Modal Trigger for New Registrations & First Logins
+  if (token) {
+    try {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const userId = user._id || user.id || 'default';
+      const isNewReg = localStorage.getItem('swappr_new_registration') === 'true';
+      const isFirstLogin = localStorage.getItem('swappr_first_login') === 'true';
+      const hasSeen = localStorage.getItem('swappr_onboarding_seen_' + userId);
+
+      if (isNewReg || isFirstLogin || !hasSeen) {
+        setTimeout(() => {
+          window.showHowItWorksModal();
+          localStorage.setItem('swappr_onboarding_seen_' + userId, 'true');
+          localStorage.removeItem('swappr_new_registration');
+          localStorage.removeItem('swappr_first_login');
+        }, 600);
+      }
+    } catch (e) {
+      console.warn('Onboarding check error:', e);
+    }
+  }
+
   // Index Page specific initialization
   const skillsContainer = document.getElementById('skillsContainer');
   const skillFormContainer = document.getElementById('skillFormContainer');
@@ -500,3 +522,118 @@ function escapeHtml(text) {
   div.textContent = text;
   return div.innerHTML;
 }
+
+/**
+ * =========================================================
+ * Onboarding / "How It Works" Modal Manager
+ * Displays system architecture and workflow instructions
+ * =========================================================
+ */
+function createHowItWorksModal() {
+  if (document.getElementById('howItWorksModal')) return;
+
+  const modalHtml = `
+  <div class="modal fade onboarding-modal" id="howItWorksModal" tabindex="-1" aria-labelledby="howItWorksModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <div class="d-flex align-items-center gap-2">
+            <div class="bg-primary bg-opacity-25 p-2 rounded-3 text-info">
+              <i class="fa-solid fa-graduation-cap fa-xl"></i>
+            </div>
+            <div>
+              <h5 class="modal-title fw-bold mb-0 text-white" id="howItWorksModalLabel">Welcome to Swappr! 🚀</h5>
+              <small class="text-secondary" style="color: #94a3b8 !important;">How our Community Skill Exchange Platform Works</small>
+            </div>
+          </div>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-4">
+          <!-- Welcome Free Credit Callout -->
+          <div class="onboarding-hero-banner mb-4 d-flex align-items-center gap-3">
+            <div class="bg-warning text-dark p-3 rounded-circle shadow-sm">
+              <i class="fa-solid fa-bolt fa-2x"></i>
+            </div>
+            <div>
+              <h6 class="fw-bold mb-1 text-dark">You Have 10 Free Welcome Credits!</h6>
+              <p class="small text-muted mb-0">Every newly registered member receives 10 complimentary Skill Credits. You can spend them to learn from others, or teach skills to earn even more credits!</p>
+            </div>
+          </div>
+
+          <h6 class="fw-bold text-uppercase text-secondary small mb-3">How the System Works in 4 Simple Steps</h6>
+
+          <div class="d-flex flex-column gap-3">
+            <!-- Step 1 -->
+            <div class="onboarding-step-card">
+              <div class="onboarding-step-num bg-primary bg-opacity-10 text-primary">1</div>
+              <div class="flex-grow-1">
+                <h6 class="fw-bold mb-1 text-dark d-flex align-items-center gap-2">
+                  <span>Offer What You Know</span>
+                  <span class="badge bg-success-subtle text-success border border-success-subtle small"><i class="fa-solid fa-gift me-1"></i>Earn +1 Instant Credit</span>
+                </h6>
+                <p class="small text-muted mb-0">
+                  Go to your <strong>Dashboard</strong> and post a skill offer you can teach (Programming, Design, Music, Cooking, Languages, Fitness). You get <strong>+1 Skill Credit added to your balance immediately</strong> for every skill offer you post!
+                </p>
+              </div>
+            </div>
+
+            <!-- Step 2 -->
+            <div class="onboarding-step-card">
+              <div class="onboarding-step-num bg-info bg-opacity-10 text-info">2</div>
+              <div class="flex-grow-1">
+                <h6 class="fw-bold mb-1 text-dark">Attach Course Notes (PDF) & Demo Video</h6>
+                <p class="small text-muted mb-0">
+                  You can attach learning materials like syllabus notes (<strong>PDF</strong>) and sample lesson clips (<strong>MP4 / WebM</strong>). Community members can view notes and stream demo videos directly in their browser.
+                </p>
+              </div>
+            </div>
+
+            <!-- Step 3 -->
+            <div class="onboarding-step-card">
+              <div class="onboarding-step-num bg-warning bg-opacity-10 text-warning">3</div>
+              <div class="flex-grow-1">
+                <h6 class="fw-bold mb-1 text-dark">Browse Catalog & Book 1-on-1 Sessions</h6>
+                <p class="small text-muted mb-0">
+                  Explore skills posted by others in the <strong>Browse Skills</strong> catalog. Use search or category filters to find what you want to learn, then click <strong>"Book Session"</strong> to request a session with a mentor.
+                </p>
+              </div>
+            </div>
+
+            <!-- Step 4 -->
+            <div class="onboarding-step-card">
+              <div class="onboarding-step-num bg-success bg-opacity-10 text-success">4</div>
+              <div class="flex-grow-1">
+                <h6 class="fw-bold mb-1 text-dark">Time-Banking Exchange (1 Hour = 1 Credit)</h6>
+                <p class="small text-muted mb-0">
+                  When a session is completed, the mentor clicks <strong>"Mark Completed"</strong> on their dashboard. <strong>1 Skill Credit is smoothly transferred</strong> from learner to mentor. No money is exchanged—pure reciprocity!
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-4 p-3 bg-light rounded-3 border d-flex align-items-center gap-2 small text-secondary">
+            <i class="fa-solid fa-lightbulb text-warning fa-lg"></i>
+            <span><strong>Quick Tip:</strong> You can re-open this guide anytime by clicking the <strong>"How It Works"</strong> button on your dashboard.</span>
+          </div>
+        </div>
+        <div class="modal-footer bg-light border-top">
+          <button type="button" class="btn btn-primary w-100 fw-bold py-2 shadow-sm" data-bs-dismiss="modal">
+            <i class="fa-solid fa-rocket me-1"></i> Got It! Let's Get Started
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
+window.showHowItWorksModal = function() {
+  createHowItWorksModal();
+  const el = document.getElementById('howItWorksModal');
+  if (el && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+    const modal = bootstrap.Modal.getInstance(el) || new bootstrap.Modal(el);
+    modal.show();
+  }
+};
